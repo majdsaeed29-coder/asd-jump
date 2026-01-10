@@ -1,53 +1,57 @@
-// لعبة Helix Jump - النسخة المحسنة
+// ==================== تهيئة اللعبة ====================
 class HelixJumpGame {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
+        
+        // عناصر واجهة المستخدم
         this.scoreElement = document.getElementById('score');
         this.levelElement = document.getElementById('level');
-        this.gameOverScreen = document.getElementById('gameOverScreen');
+        this.highScoreElement = document.getElementById('highScore');
         this.finalScoreElement = document.getElementById('finalScore');
-        this.restartBtn = document.getElementById('restartBtn');
+        this.finalHighScoreElement = document.getElementById('finalHighScore');
+        this.finalLevelElement = document.getElementById('finalLevel');
+        this.gameOverScreen = document.getElementById('gameOverScreen');
+        this.restartButton = document.getElementById('restartButton');
         
         // إعدادات اللعبة
         this.score = 0;
         this.level = 1;
-        this.gameOver = false;
-        this.isJumping = false;
+        this.highScore = localStorage.getItem('helixJumpHighScore') || 0;
+        this.gameActive = true;
         this.helixRotation = 0;
-        this.helixRotationSpeed = 0.04;
+        this.helixRotationSpeed = 0.03;
         this.platformGap = 180;
         
-        // الشخصية - أكبر حجماً
+        // الشخصية
         this.character = {
             x: this.canvas.width / 2,
             y: 150,
-            radius: 25, // حجم أكبر
-            imageRadius: 35, // حجم الصورة أكبر
-            jumpHeight: 18,
-            gravity: 0.8,
+            size: 25,
+            displaySize: 35, // حجم العرض أكبر من حجم الاصطدام
+            jumpPower: 14,
+            gravity: 0.7,
             velocityY: 0,
-            isOnPlatform: false,
+            isJumping: false,
             rotation: 0,
-            image: null,
-            loaded: false
+            image: new Image()
         };
+        
+        // الصورة
+        this.character.image.src = 'assets/engineer.png';
         
         // عناصر اللعبة
         this.platforms = [];
         this.traps = [];
         this.coins = [];
-        this.movingTraps = [];
         this.particles = [];
         
-        // التحكم باللمس
-        this.touchStartX = 0;
+        // التحكم
         this.isDragging = false;
-        this.lastRotation = 0;
+        this.lastTouchX = 0;
         
-        // الألوان الجذابة
+        // الألوان
         this.colors = {
-            helix: '#4a4a8a',
             platform1: '#ff6b9d',
             platform2: '#6b9dff',
             platform3: '#9dff6b',
@@ -58,992 +62,655 @@ class HelixJumpGame {
             coin: '#ffcc00',
             particle1: '#4dccff',
             particle2: '#ff4dcc',
-            particle3: '#ccff4d',
-            background: '#0a0a1a',
-            glow: '#ffffff'
+            helixLine: 'rgba(0, 255, 255, 0.3)'
         };
         
-        // تحميل الصورة
-        this.loadCharacterImage();
+        // تهيئة
+        this.init();
+    }
+    
+    init() {
+        // تحديث أعلى نتيجة
+        this.highScoreElement.textContent = this.highScore;
         
-        // تهيئة الأحداث
-        this.initEvents();
+        // إنشاء العناصر
+        this.createGameElements();
+        
+        // إعداد الأحداث
+        this.setupEventListeners();
         
         // بدء اللعبة
-        this.initGame();
         this.gameLoop();
     }
     
-    // تحميل صورة الشخصية
-    loadCharacterImage() {
-        this.character.image = new Image();
-        this.character.image.src = 'assets/engineer.png';
-        this.character.image.onload = () => {
-            this.character.loaded = true;
-        };
-        this.character.image.onerror = () => {
-            this.createDefaultCharacter();
-            this.character.loaded = true;
-        };
-    }
-    
-    // إنشاء شكل افتراضي للشخصية
-    createDefaultCharacter() {
-        const canvas = document.createElement('canvas');
-        canvas.width = 70;
-        canvas.height = 70;
-        const ctx = canvas.getContext('2d');
-        
-        // رسم شخصية جذابة
-        // الجسم
-        ctx.fillStyle = '#4dccff';
-        ctx.beginPath();
-        ctx.arc(35, 35, 35, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // تفاصيل الجسم
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(35, 35, 25, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // العيون
-        ctx.fillStyle = '#0a0a1a';
-        ctx.beginPath();
-        ctx.arc(25, 25, 6, 0, Math.PI * 2);
-        ctx.arc(45, 25, 6, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // الابتسامة
-        ctx.beginPath();
-        ctx.arc(35, 40, 10, 0, Math.PI, false);
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = '#0a0a1a';
-        ctx.stroke();
-        
-        this.character.image = new Image();
-        this.character.image.src = canvas.toDataURL();
-    }
-    
-    // تهيئة اللعبة
-    initGame() {
-        this.score = 0;
-        this.level = 1;
-        this.gameOver = false;
-        this.isJumping = false;
-        this.helixRotation = 0;
-        this.character.x = this.canvas.width / 2;
-        this.character.y = 150;
-        this.character.velocityY = 0;
-        this.character.isOnPlatform = false;
+    // ==================== إنشاء العناصر ====================
+    createGameElements() {
         this.platforms = [];
         this.traps = [];
         this.coins = [];
-        this.movingTraps = [];
-        this.particles = [];
         
-        // تحديث واجهة المستخدم
-        this.scoreElement.textContent = this.score;
-        this.levelElement.textContent = this.level;
-        this.gameOverScreen.style.display = 'none';
-        
-        // إنشاء المنصات
-        this.createPlatforms();
-    }
-    
-    // إنشاء منصات متنوعة
-    createPlatforms() {
-        const platformCount = 25; // زيادة عدد المنصات
+        const platformCount = 20;
         
         for (let i = 0; i < platformCount; i++) {
             const angle = (i * Math.PI * 2) / 8;
-            const radius = 140;
-            const y = i * this.platformGap + 300;
+            const y = 300 + i * this.platformGap;
             
-            // أنواع مختلفة من المنصات
+            // منصة مع فتحة (40% فرصة)
+            const hasGap = Math.random() < 0.4;
             const platformType = Math.floor(Math.random() * 4);
-            let width, height, color;
-            
-            switch(platformType) {
-                case 0: // منصة عادية
-                    width = 100;
-                    height = 20;
-                    color = this.colors.platform1;
-                    break;
-                case 1: // منصة متوسطة
-                    width = 80;
-                    height = 18;
-                    color = this.colors.platform2;
-                    break;
-                case 2: // منصة صغيرة
-                    width = 60;
-                    height = 16;
-                    color = this.colors.platform3;
-                    break;
-                case 3: // منصة كبيرة
-                    width = 120;
-                    height = 22;
-                    color = this.colors.platform4;
-                    break;
-            }
-            
-            // تحديد إذا كانت المنصة سليمة أم بها فتحة
-            const hasGap = Math.random() < 0.4; // 40% فرصة لوجود فجوة
             
             this.platforms.push({
-                x: 0, // سيتم حسابها لاحقاً
+                x: 0,
                 y: y,
-                width: width,
-                height: height,
+                width: 90,
+                height: 22,
                 angle: angle,
-                radius: radius,
-                color: color,
                 hasGap: hasGap,
-                gapPosition: hasGap ? Math.random() * (width - 40) + 20 : 0,
-                gapWidth: hasGap ? 40 : 0
+                gapPos: hasGap ? Math.random() * 50 + 20 : 0,
+                gapWidth: 45,
+                color: this.colors[`platform${platformType + 1}`],
+                type: platformType
             });
             
-            // إضافة فخاخ عشوائية (30% فرصة)
+            // فخاخ (30% فرصة)
             if (Math.random() < 0.3) {
                 const trapType = Math.floor(Math.random() * 3);
+                let trapData = {
+                    x: 0,
+                    y: y - 12,
+                    width: 26,
+                    height: 14,
+                    angle: angle,
+                    type: trapType === 0 ? 'static' : trapType === 1 ? 'moving' : 'hidden',
+                    active: true
+                };
                 
-                switch(trapType) {
-                    case 0: // فخ ثابت
-                        this.traps.push({
-                            x: 0,
-                            y: y - 10,
-                            width: 25,
-                            height: 12,
-                            angle: angle,
-                            type: 'static',
-                            active: true,
-                            pulse: 0
-                        });
-                        break;
-                    case 1: // فخ متحرك
-                        this.movingTraps.push({
-                            x: 0,
-                            y: y - 10,
-                            width: 20,
-                            height: 10,
-                            angle: angle,
-                            type: 'moving',
-                            active: true,
-                            speed: Math.random() * 2 + 1,
-                            direction: Math.random() > 0.5 ? 1 : -1,
-                            offset: 0
-                        });
-                        break;
-                    case 2: // فخ مخفي
-                        this.traps.push({
-                            x: 0,
-                            y: y - 10,
-                            width: 22,
-                            height: 8,
-                            angle: angle,
-                            type: 'hidden',
-                            active: Math.random() < 0.5, // 50% فرصة أن يكون مخفياً
-                            pulse: 0,
-                            hidden: Math.random() < 0.5
-                        });
-                        break;
+                if (trapType === 1) {
+                    // فخ متحرك
+                    trapData.speed = Math.random() * 1.5 + 0.5;
+                    trapData.direction = Math.random() > 0.5 ? 1 : -1;
+                    trapData.offset = 0;
                 }
+                
+                if (trapType === 2) {
+                    // فخ مخفي
+                    trapData.hidden = Math.random() < 0.5;
+                }
+                
+                this.traps.push(trapData);
             }
             
-            // إضافة عملات (25% فرصة)
+            // عملات (25% فرصة)
             if (Math.random() < 0.25) {
                 this.coins.push({
                     x: 0,
-                    y: y - 40,
-                    radius: 12,
+                    y: y - 45,
+                    radius: 13,
                     angle: angle,
                     collected: false,
-                    rotation: 0,
-                    glow: 0
+                    rotation: 0
                 });
             }
         }
     }
     
-    // رسم البرج الحلزوني الجذاب
+    // ==================== الرسم ====================
     drawHelix() {
-        const ctx = this.ctx;
         const centerX = this.canvas.width / 2;
-        const centerY = this.canvas.height / 2;
         
-        // خلفية متدرجة للبرج
-        const helixGradient = ctx.createRadialGradient(
-            centerX, centerY, 100,
-            centerX, centerY, 200
-        );
-        helixGradient.addColorStop(0, 'rgba(74, 74, 138, 0.8)');
-        helixGradient.addColorStop(1, 'rgba(42, 42, 85, 0.4)');
+        // الخطوط الحلزونية
+        this.ctx.strokeStyle = this.colors.helixLine;
+        this.ctx.lineWidth = 3;
+        this.ctx.lineCap = 'round';
         
-        // رسم الخطوط الحلزونية مع تدرج لوني
-        for (let i = 0; i < 16; i++) {
-            const angle = (i * Math.PI * 2) / 16 + this.helixRotation;
+        for (let i = 0; i < 8; i++) {
+            const angle = (i * Math.PI * 2) / 8 + this.helixRotation;
+            const x1 = centerX + Math.cos(angle) * 45;
+            const x2 = centerX + Math.cos(angle) * 185;
             
-            // تدرج لوني للخطوط
-            const lineGradient = ctx.createLinearGradient(
-                centerX + Math.cos(angle) * 30,
-                0,
-                centerX + Math.cos(angle) * 200,
-                this.canvas.height
-            );
-            
-            const colorValue = Math.sin(Date.now() / 1000 + i) * 0.3 + 0.7;
-            lineGradient.addColorStop(0, `rgba(255, ${Math.floor(107 * colorValue)}, ${Math.floor(157 * colorValue)}, 0.4)`);
-            lineGradient.addColorStop(1, `rgba(107, ${Math.floor(157 * colorValue)}, 255, 0.2)`);
-            
-            ctx.strokeStyle = lineGradient;
-            ctx.lineWidth = 3;
-            ctx.lineCap = 'round';
-            
-            ctx.beginPath();
-            ctx.moveTo(centerX + Math.cos(angle) * 40, 0);
-            ctx.lineTo(centerX + Math.cos(angle) * 180, this.canvas.height);
-            ctx.stroke();
+            this.ctx.beginPath();
+            this.ctx.moveTo(x1, 0);
+            this.ctx.lineTo(x2, this.canvas.height);
+            this.ctx.stroke();
         }
         
-        // رسم المركز مع تأثير glow
-        ctx.shadowColor = this.colors.glow;
-        ctx.shadowBlur = 20;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, 35, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.shadowBlur = 0;
+        // المركز
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, this.canvas.height / 2, 40, 0, Math.PI * 2);
+        this.ctx.fill();
     }
     
-    // رسم المنصات مع فتحات
     drawPlatforms() {
-        const ctx = this.ctx;
         const centerX = this.canvas.width / 2;
         
-        this.platforms.forEach((platform, index) => {
-            // حساب موضع المنصة مع الدوران
-            const rotatedAngle = platform.angle + this.helixRotation;
-            const x = centerX + Math.cos(rotatedAngle) * platform.radius;
+        this.platforms.forEach(platform => {
+            const x = centerX + Math.cos(platform.angle + this.helixRotation) * 145;
             
-            // رسم المنصة
-            ctx.save();
-            
-            // تأثير تدرج لوني للمنصة
-            const platformGradient = ctx.createLinearGradient(
-                x - platform.width/2, platform.y,
-                x + platform.width/2, platform.y + platform.height
-            );
-            platformGradient.addColorStop(0, platform.color);
-            platformGradient.addColorStop(1, this.darkenColor(platform.color, 40));
-            
-            ctx.fillStyle = platformGradient;
+            this.ctx.fillStyle = platform.color;
             
             if (platform.hasGap) {
-                // رسم المنصة مع فجوة
-                ctx.beginPath();
-                
-                // الجزء الأيسر من المنصة
-                ctx.rect(
-                    x - platform.width/2,
+                // الجزء الأيسر
+                this.ctx.fillRect(
+                    x - platform.width / 2,
                     platform.y,
-                    platform.gapPosition,
+                    platform.gapPos,
                     platform.height
                 );
                 
-                // الجزء الأيمن من المنصة
-                ctx.rect(
-                    x - platform.width/2 + platform.gapPosition + platform.gapWidth,
+                // الجزء الأيمن
+                this.ctx.fillRect(
+                    x - platform.width / 2 + platform.gapPos + platform.gapWidth,
                     platform.y,
-                    platform.width - platform.gapPosition - platform.gapWidth,
+                    platform.width - platform.gapPos - platform.gapWidth,
                     platform.height
                 );
                 
-                ctx.fill();
-                
-                // تأثير الجاذبية في الفجوة
-                ctx.fillStyle = 'rgba(77, 204, 255, 0.1)';
-                ctx.beginPath();
-                ctx.arc(
-                    x - platform.width/2 + platform.gapPosition + platform.gapWidth/2,
-                    platform.y + platform.height/2,
-                    15, 0, Math.PI * 2
+                // الفجوة (شفافة)
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+                this.ctx.fillRect(
+                    x - platform.width / 2 + platform.gapPos,
+                    platform.y,
+                    platform.gapWidth,
+                    platform.height
                 );
-                ctx.fill();
             } else {
                 // منصة كاملة
-                ctx.fillRect(
-                    x - platform.width/2,
+                this.ctx.fillRect(
+                    x - platform.width / 2,
                     platform.y,
                     platform.width,
                     platform.height
                 );
             }
             
-            // تأثير ثلاثي الأبعاد للحواف
-            ctx.strokeStyle = this.lightenColor(platform.color, 60);
-            ctx.lineWidth = 2;
-            ctx.strokeRect(
-                x - platform.width/2,
+            // حدود المنصة
+            this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeRect(
+                x - platform.width / 2,
                 platform.y,
                 platform.width,
                 platform.height
             );
-            
-            // تأثير glow للمنصات القريبة
-            if (Math.abs(platform.y - this.character.y) < 200) {
-                ctx.shadowColor = platform.color;
-                ctx.shadowBlur = 15;
-                ctx.strokeRect(
-                    x - platform.width/2,
-                    platform.y,
-                    platform.width,
-                    platform.height
-                );
-                ctx.shadowBlur = 0;
-            }
-            
-            ctx.restore();
         });
     }
     
-    // رسم الفخاخ بأنواعها
     drawTraps() {
-        const ctx = this.ctx;
         const centerX = this.canvas.width / 2;
         
-        // رسم الفخاخ الثابتة والمخفية
         this.traps.forEach(trap => {
             if (!trap.active) return;
             
-            const rotatedAngle = trap.angle + this.helixRotation;
-            const distance = Math.sqrt(
-                Math.pow(trap.x - centerX, 2) + 
-                Math.pow(trap.y - this.canvas.height/2, 2)
-            );
+            let x = centerX + Math.cos(trap.angle + this.helixRotation) * 145;
             
-            const x = centerX + Math.cos(rotatedAngle) * distance;
-            const y = trap.y;
-            
-            trap.pulse += 0.1;
-            const pulseSize = Math.sin(trap.pulse) * 3;
-            
-            ctx.save();
-            
-            if (trap.type === 'hidden' && trap.hidden) {
-                // فخ مخفي (شفاف)
-                ctx.globalAlpha = 0.3;
-                ctx.fillStyle = 'rgba(255, 102, 102, 0.5)';
-            } else {
-                // فخ عادي
-                ctx.fillStyle = trap.type === 'static' ? this.colors.trap : this.colors.hiddenTrap;
+            // الفخاخ المتحركة
+            if (trap.type === 'moving') {
+                trap.offset += trap.speed * trap.direction;
+                if (Math.abs(trap.offset) > 35) trap.direction *= -1;
+                x += trap.offset;
             }
             
-            // رسم الفخ مع تأثير النبض
-            ctx.beginPath();
-            ctx.roundRect(
-                x - trap.width/2 - pulseSize/2,
-                y - pulseSize/2,
-                trap.width + pulseSize,
-                trap.height + pulseSize,
-                5
-            );
-            ctx.fill();
+            // الفخاخ المخفية
+            if (trap.type === 'hidden' && trap.hidden) {
+                this.ctx.globalAlpha = 0.3;
+            }
+            
+            // رسم الفخ
+            this.ctx.fillStyle = trap.type === 'static' ? this.colors.trap : 
+                                trap.type === 'moving' ? this.colors.movingTrap : 
+                                this.colors.hiddenTrap;
+            
+            this.ctx.fillRect(x - trap.width / 2, trap.y, trap.width, trap.height);
             
             // تفاصيل الفخ
-            ctx.fillStyle = '#ff9999';
-            ctx.fillRect(x - trap.width/2, y, trap.width, 3);
+            this.ctx.fillStyle = trap.type === 'hidden' ? '#ff9999' : '#ff7777';
+            this.ctx.fillRect(x - trap.width / 2, trap.y, trap.width, 4);
             
-            // تأثير glow للفخاخ
-            if (Math.abs(y - this.character.y) < 100) {
-                ctx.shadowColor = '#ff4d4d';
-                ctx.shadowBlur = 15;
-                ctx.fillRect(x - trap.width/2, y, trap.width, trap.height);
-                ctx.shadowBlur = 0;
-            }
+            // أشواك
+            this.ctx.fillStyle = '#ff5555';
+            this.ctx.beginPath();
+            this.ctx.moveTo(x - trap.width / 2, trap.y);
+            this.ctx.lineTo(x - trap.width / 2 + 6, trap.y - 6);
+            this.ctx.lineTo(x - trap.width / 2 + 12, trap.y);
+            this.ctx.fill();
             
-            ctx.restore();
-        });
-        
-        // رسم الفخاخ المتحركة وتحديث حركتها
-        this.movingTraps.forEach(trap => {
-            if (!trap.active) return;
+            this.ctx.beginPath();
+            this.ctx.moveTo(x + trap.width / 2, trap.y);
+            this.ctx.lineTo(x + trap.width / 2 - 6, trap.y - 6);
+            this.ctx.lineTo(x + trap.width / 2 - 12, trap.y);
+            this.ctx.fill();
             
-            trap.offset += trap.speed * trap.direction;
-            if (Math.abs(trap.offset) > 30) {
-                trap.direction *= -1;
-            }
-            
-            const rotatedAngle = trap.angle + this.helixRotation;
-            const x = centerX + Math.cos(rotatedAngle) * (140 + trap.offset);
-            const y = trap.y;
-            
-            ctx.save();
-            
-            // تأثير متحرك
-            const wave = Math.sin(Date.now() / 200 + trap.offset) * 2;
-            
-            ctx.fillStyle = this.colors.movingTrap;
-            ctx.beginPath();
-            ctx.roundRect(
-                x - trap.width/2 + wave,
-                y - 2,
-                trap.width,
-                trap.height + 4,
-                4
-            );
-            ctx.fill();
-            
-            // تأثير الحركة
-            ctx.fillStyle = '#ff6666';
-            for (let i = 0; i < 3; i++) {
-                ctx.fillRect(
-                    x - trap.width/2 + i * (trap.width/2) + wave,
-                    y,
-                    3,
-                    trap.height
-                );
-            }
-            
-            ctx.restore();
+            this.ctx.globalAlpha = 1;
         });
     }
     
-    // رسم العملات
     drawCoins() {
-        const ctx = this.ctx;
         const centerX = this.canvas.width / 2;
         
         this.coins.forEach(coin => {
             if (coin.collected) return;
             
-            coin.rotation += 0.05;
-            coin.glow = Math.sin(Date.now() / 200) * 0.5 + 0.5;
+            coin.rotation += 0.04;
+            const x = centerX + Math.cos(coin.angle + this.helixRotation) * 145;
             
-            const rotatedAngle = coin.angle + this.helixRotation;
-            const distance = Math.sqrt(
-                Math.pow(coin.x - centerX, 2) + 
-                Math.pow(coin.y - this.canvas.height/2, 2)
-            );
+            this.ctx.save();
+            this.ctx.translate(x, coin.y);
+            this.ctx.rotate(coin.rotation);
             
-            const x = centerX + Math.cos(rotatedAngle) * distance;
-            const y = coin.y;
+            // العملة
+            this.ctx.fillStyle = this.colors.coin;
+            this.ctx.beginPath();
+            this.ctx.arc(0, 0, coin.radius, 0, Math.PI * 2);
+            this.ctx.fill();
             
-            ctx.save();
-            ctx.translate(x, y);
-            ctx.rotate(coin.rotation);
+            // التفاصيل
+            this.ctx.fillStyle = '#ff9900';
+            this.ctx.beginPath();
+            this.ctx.arc(0, 0, coin.radius * 0.7, 0, Math.PI * 2);
+            this.ctx.fill();
             
-            // تأثير glow
-            ctx.shadowColor = this.colors.coin;
-            ctx.shadowBlur = 10 + coin.glow * 10;
+            this.ctx.fillStyle = '#ffff00';
+            this.ctx.font = 'bold 14px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText('★', 0, 0);
             
-            // العملة الخارجية
-            ctx.fillStyle = this.colors.coin;
-            ctx.beginPath();
-            ctx.arc(0, 0, coin.radius, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // العملة الداخلية
-            ctx.fillStyle = '#ff9900';
-            ctx.beginPath();
-            ctx.arc(0, 0, coin.radius * 0.7, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // تفاصيل العملة
-            ctx.fillStyle = '#ffcc00';
-            ctx.font = 'bold 14px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('$', 0, 0);
-            
-            ctx.restore();
+            this.ctx.restore();
         });
     }
     
-    // رسم الشخصية الكبيرة
     drawCharacter() {
-        const ctx = this.ctx;
+        this.ctx.save();
         
-        ctx.save();
-        
-        // تأثير القفز
-        if (this.isJumping) {
-            ctx.shadowColor = this.colors.particle1;
-            ctx.shadowBlur = 30;
-            
-            // تأثير تموج أثناء القفز
-            const wave = Math.sin(Date.now() / 100) * 2;
-            ctx.filter = `drop-shadow(0 0 10px rgba(77, 204, 255, 0.7))`;
-        }
-        
-        // تدوير الشخصية أثناء القفز
-        if (this.isJumping) {
-            ctx.translate(this.character.x, this.character.y);
+        if (this.character.isJumping) {
             this.character.rotation += 0.15;
-            ctx.rotate(this.character.rotation);
-            
-            if (this.character.loaded && this.character.image) {
-                ctx.drawImage(
-                    this.character.image,
-                    -this.character.imageRadius,
-                    -this.character.imageRadius,
-                    this.character.imageRadius * 2,
-                    this.character.imageRadius * 2
-                );
-            } else {
-                // شكل افتراضي
-                ctx.fillStyle = this.colors.particle1;
-                ctx.beginPath();
-                ctx.arc(0, 0, this.character.radius, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        } else {
-            // الشخصية ثابتة (لا دوران)
-            if (this.character.loaded && this.character.image) {
-                ctx.drawImage(
-                    this.character.image,
-                    this.character.x - this.character.imageRadius,
-                    this.character.y - this.character.imageRadius,
-                    this.character.imageRadius * 2,
-                    this.character.imageRadius * 2
-                );
-            } else {
-                // شكل افتراضي
-                ctx.fillStyle = this.colors.particle1;
-                ctx.beginPath();
-                ctx.arc(this.character.x, this.character.y, this.character.radius, 0, Math.PI * 2);
-                ctx.fill();
-            }
+            this.ctx.shadowColor = this.colors.particle1;
+            this.ctx.shadowBlur = 25;
         }
         
-        // تأثير الهالة حول الشخصية
-        ctx.shadowColor = this.colors.particle1;
-        ctx.shadowBlur = 20;
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(
-            this.character.x,
-            this.character.y,
-            this.character.radius + 5,
-            0,
-            Math.PI * 2
-        );
-        ctx.stroke();
+        this.ctx.translate(this.character.x, this.character.y);
+        this.ctx.rotate(this.character.rotation);
         
-        ctx.restore();
+        // رسم الصورة أو البديل
+        if (this.character.image.complete) {
+            this.ctx.drawImage(
+                this.character.image,
+                -this.character.displaySize,
+                -this.character.displaySize,
+                this.character.displaySize * 2,
+                this.character.displaySize * 2
+            );
+        } else {
+            // رسم بديل
+            this.ctx.fillStyle = this.colors.particle1;
+            this.ctx.beginPath();
+            this.ctx.arc(0, 0, this.character.size, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            // الوجه
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.beginPath();
+            this.ctx.arc(-10, -10, 5, 0, Math.PI * 2);
+            this.ctx.arc(10, -10, 5, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            this.ctx.beginPath();
+            this.ctx.arc(0, 5, 8, 0, Math.PI);
+            this.ctx.strokeStyle = '#ffffff';
+            this.ctx.lineWidth = 3;
+            this.ctx.stroke();
+        }
+        
+        this.ctx.restore();
+        this.ctx.shadowBlur = 0;
     }
     
-    // رسم الجسيمات
     drawParticles() {
         this.particles.forEach((particle, index) => {
-            particle.life -= 0.015;
+            particle.life -= 0.02;
             particle.x += particle.vx;
             particle.y += particle.vy;
-            particle.vy += 0.08;
-            particle.rotation += 0.1;
+            particle.vy += 0.1;
             
-            this.ctx.save();
             this.ctx.globalAlpha = particle.life;
-            this.ctx.translate(particle.x, particle.y);
-            this.ctx.rotate(particle.rotation);
-            
             this.ctx.fillStyle = particle.color;
             this.ctx.beginPath();
             
             if (particle.shape === 'star') {
-                // شكل نجمة
                 for (let i = 0; i < 5; i++) {
                     const angle = (i * 72) * Math.PI / 180;
-                    const x = Math.cos(angle) * particle.radius;
-                    const y = Math.sin(angle) * particle.radius;
-                    
-                    if (i === 0) this.ctx.moveTo(x, y);
-                    else this.ctx.lineTo(x, y);
+                    const x = Math.cos(angle) * particle.size;
+                    const y = Math.sin(angle) * particle.size;
+                    if (i === 0) this.ctx.moveTo(x + particle.x, y + particle.y);
+                    else this.ctx.lineTo(x + particle.x, y + particle.y);
                 }
                 this.ctx.closePath();
             } else {
-                // شكل دائرة
-                this.ctx.arc(0, 0, particle.radius, 0, Math.PI * 2);
+                this.ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
             }
             
             this.ctx.fill();
-            this.ctx.restore();
             
             if (particle.life <= 0) {
                 this.particles.splice(index, 1);
             }
         });
-    }
-    
-    // إنشاء جسيمات تأثير
-    createParticles(x, y, count, color, shape = 'circle') {
-        for (let i = 0; i < count; i++) {
-            this.particles.push({
-                x: x,
-                y: y,
-                vx: (Math.random() - 0.5) * 6,
-                vy: (Math.random() - 0.5) * 6 - 3,
-                radius: Math.random() * 4 + 2,
-                color: color,
-                life: 1,
-                shape: shape,
-                rotation: Math.random() * Math.PI * 2
-            });
-        }
-    }
-    
-    // تحديث حركة الشخصية (قفزات صغيرة)
-    updateCharacter() {
-        if (this.gameOver) return;
         
-        if (this.isJumping) {
-            this.character.velocityY += this.character.gravity;
-            this.character.y += this.character.velocityY;
-            
-            // التحقق من الاصطدام بالمنصات
-            this.checkPlatformCollision();
-            
-            // التحقق من جمع العملات
-            this.checkCoinCollection();
-            
-            // التحقق من الاصطدام بالفخاخ
-            this.checkTrapCollision();
-            
-            // التحقق من خروج الشخصية من الشاشة
-            if (this.character.y > this.canvas.height + 100) {
-                this.gameOver = true;
-                this.showGameOver();
-            }
-            
-            // التحقق من وصول الشخصية للأسفل (المستوى التالي)
-            if (this.character.y > this.canvas.height - 50 && !this.isJumping) {
-                this.nextLevel();
-            }
-            
-            // إضافة جسيمات أثناء القفز
-            if (Math.random() < 0.3) {
-                this.createParticles(
-                    this.character.x,
-                    this.character.y + this.character.radius,
-                    1,
-                    this.colors.particle1,
-                    'star'
-                );
-            }
-        }
+        this.ctx.globalAlpha = 1;
     }
     
-    // جعل الشخصية تقفز (قفزة صغيرة)
-    jump() {
-        if (!this.isJumping && !this.gameOver) {
-            this.isJumping = true;
-            this.character.velocityY = -this.character.jumpHeight;
-            
-            // تأثير القفز
-            this.createParticles(
+    // ==================== الحركة والفيزياء ====================
+    updateCharacter() {
+        if (!this.character.isJumping) return;
+        
+        this.character.velocityY += this.character.gravity;
+        this.character.y += this.character.velocityY;
+        
+        this.checkPlatformCollision();
+        this.checkTrapCollision();
+        this.checkCoinCollection();
+        
+        // جسيمات أثناء القفز
+        if (Math.random() < 0.2) {
+            this.createParticle(
                 this.character.x,
-                this.character.y + this.character.radius,
-                8,
+                this.character.y + this.character.size,
                 this.colors.particle1,
                 'circle'
             );
         }
+        
+        // خروج من الشاشة
+        if (this.character.y > this.canvas.height + 100) {
+            this.endGame();
+        }
+        
+        // نهاية المستوى
+        if (this.character.y > this.canvas.height - 60 && !this.character.isJumping) {
+            this.nextLevel();
+        }
     }
     
-    // التحقق من الاصطدام بالمنصات (مع مراعاة الفتحات)
     checkPlatformCollision() {
         const centerX = this.canvas.width / 2;
         
-        for (let i = 0; i < this.platforms.length; i++) {
-            const platform = this.platforms[i];
+        for (let platform of this.platforms) {
+            const x = centerX + Math.cos(platform.angle + this.helixRotation) * 145;
             
-            const rotatedAngle = platform.angle + this.helixRotation;
-            const platformX = centerX + Math.cos(rotatedAngle) * platform.radius;
-            
-            // التحقق إذا كانت الشخصية فوق المنصة
-            if (
-                this.character.y + this.character.radius > platform.y &&
-                this.character.y + this.character.radius < platform.y + platform.height + this.character.velocityY &&
-                this.character.velocityY > 0
-            ) {
-                let isInGap = false;
+            // التحقق من الموضع العمودي
+            if (this.character.y + this.character.size > platform.y &&
+                this.character.y + this.character.size < platform.y + platform.height + this.character.velocityY &&
+                this.character.velocityY > 0) {
                 
-                // التحقق إذا كانت الشخصية في الفجوة
-                if (platform.hasGap) {
-                    const charLeft = this.character.x - this.character.radius;
-                    const charRight = this.character.x + this.character.radius;
-                    const gapLeft = platformX - platform.width/2 + platform.gapPosition;
-                    const gapRight = gapLeft + platform.gapWidth;
+                // التحقق من الموضع الأفقي
+                if (this.character.x + this.character.size > x - platform.width / 2 &&
+                    this.character.x - this.character.size < x + platform.width / 2) {
                     
-                    if (charRight > gapLeft && charLeft < gapRight) {
-                        isInGap = true;
+                    // التحقق من الفجوة
+                    let inGap = false;
+                    if (platform.hasGap) {
+                        const gapStart = x - platform.width / 2 + platform.gapPos;
+                        const gapEnd = gapStart + platform.gapWidth;
+                        if (this.character.x > gapStart && this.character.x < gapEnd) {
+                            inGap = true;
+                        }
+                    }
+                    
+                    if (!inGap) {
+                        // هبوط ناجح
+                        this.character.y = platform.y - this.character.size;
+                        this.character.velocityY = 0;
+                        this.character.isJumping = false;
+                        this.character.rotation = 0;
+                        
+                        // إضافة النقاط
+                        this.addScore(10);
+                        this.createParticle(
+                            this.character.x,
+                            this.character.y + this.character.size,
+                            platform.color,
+                            'circle',
+                            5
+                        );
+                        break;
                     }
                 }
-                
-                // التحقق من الاصطدام بالجزء الصلب من المنصة
-                if (!isInGap &&
-                    this.character.x + this.character.radius > platformX - platform.width/2 &&
-                    this.character.x - this.character.radius < platformX + platform.width/2) {
-                    
-                    // الهبوط على المنصة
-                    this.isJumping = false;
-                    this.character.y = platform.y - this.character.radius;
-                    this.character.velocityY = 0;
-                    this.character.rotation = 0;
-                    
-                    // زيادة النقاط
-                    this.score += 10;
-                    this.scoreElement.textContent = this.score;
-                    
-                    // تأثير الهبوط
-                    this.createParticles(
-                        this.character.x,
-                        this.character.y + this.character.radius,
-                        6,
-                        platform.color,
-                        'circle'
-                    );
-                    
-                    break;
-                }
             }
         }
     }
     
-    // التحقق من جمع العملات
-    checkCoinCollection() {
-        const centerX = this.canvas.width / 2;
-        
-        for (let i = 0; i < this.coins.length; i++) {
-            const coin = this.coins[i];
-            
-            if (coin.collected) continue;
-            
-            const rotatedAngle = coin.angle + this.helixRotation;
-            const distance = Math.sqrt(
-                Math.pow(coin.x - centerX, 2) + 
-                Math.pow(coin.y - this.canvas.height/2, 2)
-            );
-            
-            const coinX = centerX + Math.cos(rotatedAngle) * distance;
-            const coinY = coin.y;
-            
-            const dx = this.character.x - coinX;
-            const dy = this.character.y - coinY;
-            const distanceToCoin = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distanceToCoin < this.character.radius + coin.radius) {
-                coin.collected = true;
-                this.score += 50;
-                this.scoreElement.textContent = this.score;
-                
-                // تأثير جمع العملة
-                this.createParticles(coinX, coinY, 15, this.colors.coin, 'star');
-            }
-        }
-    }
-    
-    // التحقق من الاصطدام بالفخاخ
     checkTrapCollision() {
         const centerX = this.canvas.width / 2;
         
-        // التحقق من الفخاخ الثابتة والمخفية
-        for (let i = 0; i < this.traps.length; i++) {
-            const trap = this.traps[i];
-            
+        for (let trap of this.traps) {
             if (!trap.active) continue;
             
-            const rotatedAngle = trap.angle + this.helixRotation;
-            const distance = Math.sqrt(
-                Math.pow(trap.x - centerX, 2) + 
-                Math.pow(trap.y - this.canvas.height/2, 2)
+            let x = centerX + Math.cos(trap.angle + this.helixRotation) * 145;
+            if (trap.type === 'moving') x += trap.offset;
+            
+            if (this.character.x + this.character.size > x - trap.width / 2 &&
+                this.character.x - this.character.size < x + trap.width / 2 &&
+                this.character.y + this.character.size > trap.y &&
+                this.character.y - this.character.size < trap.y + trap.height) {
+                
+                this.createParticle(x, trap.y, this.colors.trap, 'star', 20);
+                this.endGame();
+                break;
+            }
+        }
+    }
+    
+    checkCoinCollection() {
+        const centerX = this.canvas.width / 2;
+        
+        this.coins.forEach(coin => {
+            if (coin.collected) return;
+            
+            const x = centerX + Math.cos(coin.angle + this.helixRotation) * 145;
+            const dx = this.character.x - x;
+            const dy = this.character.y - coin.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < this.character.size + coin.radius) {
+                coin.collected = true;
+                this.addScore(50);
+                this.createParticle(x, coin.y, this.colors.coin, 'star', 12);
+            }
+        });
+    }
+    
+    // ==================== التحكم ====================
+    jump() {
+        if (!this.character.isJumping && this.gameActive) {
+            this.character.isJumping = true;
+            this.character.velocityY = -this.character.jumpPower;
+            
+            this.createParticle(
+                this.character.x,
+                this.character.y + this.character.size,
+                this.colors.particle1,
+                'circle',
+                8
             );
-            
-            const trapX = centerX + Math.cos(rotatedAngle) * distance;
-            const trapY = trap.y;
-            
-            if (this.checkTrapHit(trapX, trapY, trap.width, trap.height)) {
-                this.handleTrapCollision(trapX, trapY);
-                return;
-            }
-        }
-        
-        // التحقق من الفخاخ المتحركة
-        for (let i = 0; i < this.movingTraps.length; i++) {
-            const trap = this.movingTraps[i];
-            
-            if (!trap.active) continue;
-            
-            trap.offset += trap.speed * trap.direction;
-            if (Math.abs(trap.offset) > 30) {
-                trap.direction *= -1;
-            }
-            
-            const rotatedAngle = trap.angle + this.helixRotation;
-            const trapX = centerX + Math.cos(rotatedAngle) * (140 + trap.offset);
-            const trapY = trap.y;
-            
-            if (this.checkTrapHit(trapX, trapY, trap.width, trap.height)) {
-                this.handleTrapCollision(trapX, trapY);
-                return;
-            }
         }
     }
     
-    // التحقق من ضربة الفخ
-    checkTrapHit(trapX, trapY, trapWidth, trapHeight) {
-        return (
-            this.character.x + this.character.radius > trapX - trapWidth/2 &&
-            this.character.x - this.character.radius < trapX + trapWidth/2 &&
-            this.character.y + this.character.radius > trapY &&
-            this.character.y - this.character.radius < trapY + trapHeight
-        );
+    rotateHelix(deltaX) {
+        if (this.gameActive) {
+            this.helixRotation += deltaX * this.helixRotationSpeed;
+        }
     }
     
-    // معالجة الاصطدام بالفخ
-    handleTrapCollision(trapX, trapY) {
-        this.gameOver = true;
+    // ==================== الأحداث ====================
+    setupEventListeners() {
+        // اللمس للتدوير
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this.isDragging = true;
+            this.lastTouchX = e.touches[0].clientX;
+        });
         
-        // تأثير الانفجار
-        this.createParticles(trapX, trapY, 25, this.colors.trap, 'star');
-        this.createParticles(this.character.x, this.character.y, 20, this.colors.particle1, 'circle');
+        this.canvas.addEventListener('touchmove', (e) => {
+            if (!this.isDragging || !this.gameActive) return;
+            e.preventDefault();
+            
+            const currentX = e.touches[0].clientX;
+            const deltaX = currentX - this.lastTouchX;
+            
+            this.rotateHelix(deltaX * 0.02);
+            this.lastTouchX = currentX;
+        });
         
-        this.showGameOver();
+        this.canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            this.isDragging = false;
+        });
+        
+        // الفأرة للتدوير
+        this.canvas.addEventListener('mousedown', (e) => {
+            this.isDragging = true;
+            this.lastTouchX = e.clientX;
+        });
+        
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (!this.isDragging || !this.gameActive) return;
+            
+            const currentX = e.clientX;
+            const deltaX = currentX - this.lastTouchX;
+            
+            this.rotateHelix(deltaX * 0.02);
+            this.lastTouchX = currentX;
+        });
+        
+        this.canvas.addEventListener('mouseup', () => {
+            this.isDragging = false;
+        });
+        
+        // النقر للقفز
+        this.canvas.addEventListener('click', () => this.jump());
+        
+        // إعادة التشغيل
+        this.restartButton.addEventListener('click', () => this.restartGame());
+        
+        // لوحة المفاتيح (اختياري)
+        document.addEventListener('keydown', (e) => {
+            if (!this.gameActive) return;
+            
+            switch(e.key) {
+                case ' ':
+                case 'ArrowUp':
+                    this.jump();
+                    break;
+                case 'ArrowLeft':
+                    this.rotateHelix(-20);
+                    break;
+                case 'ArrowRight':
+                    this.rotateHelix(20);
+                    break;
+            }
+        });
     }
     
-    // الانتقال للمستوى التالي
+    // ==================== دوال المساعدة ====================
+    addScore(points) {
+        this.score += points;
+        this.scoreElement.textContent = this.score;
+        
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            this.highScoreElement.textContent = this.highScore;
+            localStorage.setItem('helixJumpHighScore', this.highScore);
+        }
+    }
+    
     nextLevel() {
         this.level++;
         this.levelElement.textContent = this.level;
         
         // زيادة الصعوبة
-        this.helixRotationSpeed = Math.min(0.06, this.helixRotationSpeed + 0.002);
-        this.platformGap = Math.max(120, this.platformGap - 5);
+        this.helixRotationSpeed = Math.min(0.05, this.helixRotationSpeed + 0.001);
         
-        // إعادة تعيين موقع الشخصية
-        this.character.x = this.canvas.width / 2;
+        // إعادة تعيين الشخصية
         this.character.y = 150;
-        this.isJumping = false;
+        this.character.isJumping = false;
         this.character.velocityY = 0;
         this.character.rotation = 0;
         
-        // إنشاء منصات جديدة
-        this.platforms = [];
-        this.traps = [];
-        this.coins = [];
-        this.movingTraps = [];
-        this.createPlatforms();
+        // إنشاء عناصر جديدة
+        this.createGameElements();
         
-        // تأثير المستوى الجديد
-        this.createParticles(
-            this.canvas.width/2,
-            this.canvas.height/2,
-            30,
-            this.colors.particle1,
-            'star'
-        );
-    }
-    
-    // تدوير الأسطوانة
-    rotateHelix(deltaX) {
-        if (!this.gameOver) {
-            this.helixRotation += deltaX * this.helixRotationSpeed;
-            
-            // إضافة جسيمات أثناء الدوران
-            if (Math.abs(deltaX) > 0.5 && Math.random() < 0.1) {
-                this.createParticles(
-                    this.canvas.width/2 + Math.cos(this.helixRotation) * 160,
-                    this.character.y,
-                    1,
-                    this.colors.particle2,
-                    'circle'
-                );
-            }
+        // تأثير
+        for (let i = 0; i < 30; i++) {
+            this.createParticle(
+                this.canvas.width / 2,
+                this.canvas.height / 2,
+                this.colors.particle1,
+                'star'
+            );
         }
     }
     
-    // التحكم باللمس
-    handleTouchStart(e) {
-        e.preventDefault();
-        this.touchStartX = e.touches[0].clientX;
-        this.lastRotation = this.helixRotation;
-    }
-    
-    handleTouchMove(e) {
-        if (this.gameOver) return;
-        e.preventDefault();
+    endGame() {
+        this.gameActive = false;
         
-        const touchX = e.touches[0].clientX;
-        const deltaX = touchX - this.touchStartX;
-        
-        this.rotateHelix(deltaX * 0.01);
-    }
-    
-    handleTouchEnd(e) {
-        e.preventDefault();
-        // لا شيء - القفز يتم باللمس المنفصل
-    }
-    
-    // معالجة اللمس للقفز
-    handleJumpTouch(e) {
-        if (this.gameOver) return;
-        e.preventDefault();
-        
-        if (!this.isJumping) {
-            this.jump();
-        }
-    }
-    
-    // التحكم بالفأرة
-    handleMouseDown(e) {
-        this.touchStartX = e.clientX;
-        this.lastRotation = this.helixRotation;
-    }
-    
-    handleMouseMove(e) {
-        if (!this.gameOver && e.buttons === 1) {
-            const mouseX = e.clientX;
-            const deltaX = mouseX - this.touchStartX;
-            
-            this.rotateHelix(deltaX * 0.01);
-        }
-    }
-    
-    handleMouseUp(e) {
-        // لا شيء - القفز يتم بالنقر المنفصل
-    }
-    
-    // معالجة النقر للقفز
-    handleJumpClick(e) {
-        if (this.gameOver) return;
-        
-        if (!this.isJumping) {
-            this.jump();
-        }
-    }
-    
-    // عرض شاشة نهاية اللعبة
-    showGameOver() {
-        this.gameOver = true;
         this.finalScoreElement.textContent = this.score;
+        this.finalHighScoreElement.textContent = this.highScore;
+        this.finalLevelElement.textContent = this.level;
+        
         this.gameOverScreen.style.display = 'flex';
     }
     
-    // حلقة اللعبة الرئيسية
+    restartGame() {
+        this.score = 0;
+        this.level = 1;
+        this.gameActive = true;
+        this.helixRotation = 0;
+        
+        this.character.x = this.canvas.width / 2;
+        this.character.y = 150;
+        this.character.isJumping = false;
+        this.character.velocityY = 0;
+        this.character.rotation = 0;
+        
+        this.scoreElement.textContent = '0';
+        this.levelElement.textContent = '1';
+        
+        this.createGameElements();
+        this.gameOverScreen.style.display = 'none';
+    }
+    
+    createParticle(x, y, color, shape = 'circle', count = 1) {
+        for (let i = 0; i < count; i++) {
+            this.particles.push({
+                x: x,
+                y: y,
+                vx: (Math.random() - 0.5) * 4,
+                vy: (Math.random() - 0.5) * 4 - 2,
+                size: Math.random() * 3 + 1,
+                color: color,
+                life: 1,
+                shape: shape
+            });
+        }
+    }
+    
+    // ==================== حلقة اللعبة ====================
     gameLoop() {
-        if (!this.gameOver) {
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            
+        if (this.gameActive) {
             this.updateCharacter();
             
+            // تحديث الجسيمات
             this.particles.forEach(p => {
                 p.life -= 0.01;
                 p.x += p.vx;
                 p.y += p.vy;
-                p.vy += 0.06;
+                p.vy += 0.08;
             });
             this.particles = this.particles.filter(p => p.life > 0);
+            
+            // الرسم
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             
             this.drawHelix();
             this.drawPlatforms();
@@ -1055,115 +722,9 @@ class HelixJumpGame {
         
         requestAnimationFrame(() => this.gameLoop());
     }
-    
-    // دوال مساعدة للون
-    darkenColor(color, amount) {
-        let usePound = false;
-        if (color[0] === "#") {
-            color = color.slice(1);
-            usePound = true;
-        }
-        const num = parseInt(color, 16);
-        let r = (num >> 16) - amount;
-        let g = ((num >> 8) & 0x00FF) - amount;
-        let b = (num & 0x0000FF) - amount;
-        
-        r = r < 0 ? 0 : r;
-        g = g < 0 ? 0 : g;
-        b = b < 0 ? 0 : b;
-        
-        return (usePound ? "#" : "") + (b | (g << 8) | (r << 16)).toString(16).padStart(6, '0');
-    }
-    
-    lightenColor(color, amount) {
-        let usePound = false;
-        if (color[0] === "#") {
-            color = color.slice(1);
-            usePound = true;
-        }
-        const num = parseInt(color, 16);
-        let r = (num >> 16) + amount;
-        let g = ((num >> 8) & 0x00FF) + amount;
-        let b = (num & 0x0000FF) + amount;
-        
-        r = r > 255 ? 255 : r;
-        g = g > 255 ? 255 : g;
-        b = b > 255 ? 255 : b;
-        
-        return (usePound ? "#" : "") + (b | (g << 8) | (r << 16)).toString(16).padStart(6, '0');
-    }
-    
-    // تهيئة الأحداث
-    initEvents() {
-        // أحداث اللمس للتدوير
-        this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e));
-        this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e));
-        this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e));
-        
-        // لمس منفصل للقفز (النقر في أي مكان)
-        document.addEventListener('touchstart', (e) => {
-            if (e.target === this.canvas) {
-                this.handleJumpTouch(e);
-            }
-        });
-        
-        // أحداث الفأرة للتدوير
-        this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
-        this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-        this.canvas.addEventListener('mouseup', (e) => this.handleMouseUp(e));
-        
-        // نقر منفصل للقفز
-        this.canvas.addEventListener('click', (e) => this.handleJumpClick(e));
-        
-        // منع السياق الافتراضي
-        this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-        
-        // زر إعادة اللعب
-        this.restartBtn.addEventListener('click', () => {
-            this.initGame();
-        });
-        
-        // أحداث لوحة المفاتيح (اختيارية)
-        document.addEventListener('keydown', (e) => {
-            if (this.gameOver) return;
-            
-            switch(e.key) {
-                case 'ArrowLeft':
-                case 'a':
-                    this.rotateHelix(-10);
-                    break;
-                case 'ArrowRight':
-                case 'd':
-                    this.rotateHelix(10);
-                    break;
-                case ' ':
-                case 'ArrowUp':
-                case 'w':
-                    if (!this.isJumping) this.jump();
-                    e.preventDefault();
-                    break;
-            }
-        });
-    }
 }
 
 // بدء اللعبة عند تحميل الصفحة
 window.addEventListener('load', () => {
     new HelixJumpGame();
-    
-    // إضافة دالة roundRect للكانفاس إذا لم تكن موجودة
-    if (!CanvasRenderingContext2D.prototype.roundRect) {
-        CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
-            if (width < 2 * radius) radius = width / 2;
-            if (height < 2 * radius) radius = height / 2;
-            this.beginPath();
-            this.moveTo(x + radius, y);
-            this.arcTo(x + width, y, x + width, y + height, radius);
-            this.arcTo(x + width, y + height, x, y + height, radius);
-            this.arcTo(x, y + height, x, y, radius);
-            this.arcTo(x, y, x + width, y, radius);
-            this.closePath();
-            return this;
-        };
-    }
 });
