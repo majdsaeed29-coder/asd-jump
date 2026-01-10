@@ -8,7 +8,6 @@
 
 body {
     touch-action: manipulation;
-    overflow: hidden;
     overscroll-behavior: none;
 }
 
@@ -16,116 +15,115 @@ body {
     touch-action: none;
 }
 
+/* تأثيرات الجسيمات */
+.particle {
+    position: absolute;
+    pointer-events: none;
+    border-radius: 50%;
+    z-index: 10;
+}
+
+/* تأثيرات الأنيميشن */
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+@keyframes glow {
+    0%, 100% { 
+        box-shadow: 0 0 5px #4dccff, 0 0 10px #4dccff;
+    }
+    50% { 
+        box-shadow: 0 0 10px #4dccff, 0 0 20px #4dccff;
+    }
+}
+
+@keyframes bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
 /* تأثيرات التحميل */
-.loading {
+.loading-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: #1a1a2e;
+    background: linear-gradient(135deg, #0c0c1d, #1a1a3e);
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     z-index: 1000;
 }
 
 .loading-spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid rgba(77, 204, 255, 0.3);
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(77, 204, 255, 0.3);
     border-radius: 50%;
     border-top-color: #4dccff;
-    animation: spin 1s linear infinite;
+    animation: rotate 1s linear infinite;
+    margin-bottom: 20px;
 }
 
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-/* تأثيرات الجسيمات */
-.particle {
-    position: absolute;
-    pointer-events: none;
-    border-radius: 50%;
-}
-
-/* أنيميشن للفخاخ */
-@keyframes trapPulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.1); opacity: 0.8; }
-}
-
-@keyframes coinSpin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-/* تأثيرات القفز */
-@keyframes jumpEffect {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
+.loading-text {
+    color: #4dccff;
+    font-size: 18px;
+    animation: pulse 1.5s infinite;
 }
 
 /* تنسيقات للأجهزة المحمولة */
 @media (max-width: 480px) {
-    #gameContainer {
-        max-width: 100%;
-        margin: 10px;
+    body {
+        padding: 5px;
     }
     
-    #gameCanvas {
-        height: 500px;
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
     }
     
-    .game-ui {
-        top: 10px;
-        right: 10px;
-        left: 10px;
-    }
-    
-    .score-board, .level-board {
-        font-size: 16px;
-        padding: 6px 12px;
-    }
-    
-    .game-over h2 {
-        font-size: 28px;
-    }
-    
-    .game-over p {
-        font-size: 20px;
-    }
-    
-    .restart-btn {
-        padding: 10px 25px;
-        font-size: 16px;
-    }
-    
-    .controls-info {
-        font-size: 12px;
-        padding: 8px;
-        margin: 0 10px;
-    }
-    
-    .game-title {
-        font-size: 20px;
+    .loading-text {
+        font-size: 14px;
     }
 }
 
-/* تنسيقات للأجهزة اللوحية */
-@media (min-width: 768px) and (max-width: 1024px) {
+/* تنسيقات للشاشات الكبيرة */
+@media (min-width: 768px) {
     #gameContainer {
-        max-width: 500px;
-    }
-    
-    #gameCanvas {
-        height: 700px;
+        max-width: 450px;
     }
 }
 
-/* تأثيرات التمرير العمودي لمنع التمرير غير المقصود على الجوال */
+/* تأثيرات القفز */
+.jump-effect {
+    animation: bounce 0.3s ease;
+}
+
+/* تأثيرات الفخاخ */
+.trap-danger {
+    animation: shake 0.3s ease infinite;
+}
+
+/* تأثيرات العملات */
+.coin-glow {
+    animation: glow 1s ease infinite;
+}
+
+/* منع التمرير على الجوال */
 .no-scroll {
     overflow: hidden;
     position: fixed;
