@@ -3,95 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة Helix Jump مع شخصية مخصصة</title>
+    <title>Helix Jump - لعبة الشخصية الحلزونية</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="icon" href="assets/icons/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        #gameContainer {
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+            margin: 20px;
+        }
+        
+        #gameCanvas {
+            background: #0f0f23;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+            display: block;
+            width: 100%;
+            touch-action: none;
+        }
+        
+        .game-ui {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            left: 15px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10;
+        }
+        
+        .score-board {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #4dccff;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .level-board {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffcc00;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            z-index: 20;
+        }
+        
+        .game-over h2 {
+            color: #ff3333;
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
+        }
+        
+        .game-over p {
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+        
+        .restart-btn {
+            background: linear-gradient(to right, #4dccff, #0099cc);
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .restart-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 153, 204, 0.4);
+        }
+        
+        .controls-info {
+            position: absolute;
+            bottom: 15px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #aaa;
+            font-size: 14px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            margin: 0 15px;
+        }
+        
+        .game-title {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #4dccff;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(77, 204, 255, 0.5);
+        }
+    </style>
 </head>
 <body>
-    <div class="header">
-        <h1><i class="fas fa-helmet-safety"></i> لعبة Helix Jump</h1>
-        <p>تجنب الفخاخ ووصل إلى أسفل البرج الحلزوني باستخدام شخصيتك المفضلة!</p>
-    </div>
-    
-    <div class="character-select">
-        <h3><i class="fas fa-user-circle"></i> اختر شخصيتك</h3>
-        <div class="character-options">
-            <div class="character-option selected" data-character="engineer">
-                <img src="assets/characters/engineer.png" alt="المهندس">
-            </div>
-            <div class="character-option" data-character="astronaut">
-                <img src="assets/characters/astronaut.png" alt="رائد الفضاء">
-            </div>
-            <div class="character-option" data-character="adventurer">
-                <img src="assets/characters/adventurer.png" alt="المغامر">
-            </div>
-            <div class="character-option" data-character="robot">
-                <img src="assets/characters/robot.png" alt="الروبوت">
-            </div>
-        </div>
-        <div class="upload-btn" id="uploadBtn">
-            <i class="fas fa-upload"></i>
-            <span>ارفع صورتك الخاصة</span>
-        </div>
-        <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+    <div id="gameContainer">
+        <div class="game-title">HELIX JUMP</div>
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
         
-        <div class="difficulty">
-            <div class="difficulty-btn active" data-level="easy">سهل</div>
-            <div class="difficulty-btn" data-level="medium">متوسط</div>
-            <div class="difficulty-btn" data-level="hard">صعب</div>
-        </div>
-    </div>
-    
-    <div class="game-container">
-        <div class="stats">
-            <div class="stat-box">
-                <div class="stat-value" id="score">0</div>
-                <div class="stat-label">النقاط</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-value" id="level">1</div>
-                <div class="stat-label">المستوى</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-value" id="lives">3</div>
-                <div class="stat-label">الأرواح</div>
-            </div>
+        <div class="game-ui">
+            <div class="score-board">النقاط: <span id="score">0</span></div>
+            <div class="level-board">المستوى: <span id="level">1</span></div>
         </div>
         
-        <div class="game-wrapper">
-            <canvas id="gameCanvas" width="400" height="600"></canvas>
-            
-            <div class="game-over" id="gameOverScreen">
-                <h2>انتهت اللعبة!</h2>
-                <p>النتيجة النهائية: <span id="finalScore">0</span></p>
-                <button class="restart-btn" id="restartBtn"><i class="fas fa-redo"></i> ابدأ من جديد</button>
-            </div>
+        <div class="game-over" id="gameOverScreen">
+            <h2>انتهت اللعبة!</h2>
+            <p>النتيجة النهائية: <span id="finalScore">0</span></p>
+            <button class="restart-btn" id="restartBtn">إعادة اللعب</button>
         </div>
         
-        <div class="controls">
-            <button class="control-btn" id="leftBtn"><i class="fas fa-arrow-left"></i></button>
-            <button class="control-btn" id="jumpBtn"><i class="fas fa-arrow-up"></i></button>
-            <button class="control-btn" id="rightBtn"><i class="fas fa-arrow-right"></i></button>
+        <div class="controls-info">
+            اسحب يميناً أو يساراً لتدوير الأسطوانة
         </div>
     </div>
-    
-    <div class="instructions">
-        <h3><i class="fas fa-info-circle"></i> كيفية اللعب</h3>
-        <ul>
-            <li>استخدم أزرار <span class="highlight">اليسار واليمين</span> لتدوير البرج الحلزوني</li>
-            <li>استخدم زر <span class="highlight">القفز</span> لإسقاط شخصيتك للأسفل</li>
-            <li>تجنب <span class="highlight">الفخاخ الحمراء</span> على المنصات</li>
-            <li>اجمع <span class="highlight">النقاط الذهبية</span> لزيادة نقاطك</li>
-            <li>كلما تقدمت في اللعبة، ستزيد صعوبة الفخاخ وحركة البرج</li>
-            <li>لديك <span class="highlight">3 أرواح</span> فقط، فكر جيداً في خطواتك!</li>
-        </ul>
-    </div>
-    
-    <footer>
-        <p>تم التطوير بواسطة مهندس معلوماتية - لعبة Helix Jump مخصصة</p>
-        <p>HTML5 + CSS3 + JavaScript</p>
-    </footer>
 
     <script src="game.js"></script>
 </body>
