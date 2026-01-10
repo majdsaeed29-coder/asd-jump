@@ -1,76 +1,457 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Helix Jump - اللعبة الحلزونية</title>
+    <title>Helix Jump Pro - القفز الحلزوني المتطور</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
 </head>
 <body>
+    <!-- شاشة البداية -->
+    <div id="startScreen" class="start-screen active">
+        <div class="start-container">
+            <div class="start-header">
+                <h1 class="game-title">
+                    <i class="fas fa-helmet-safety"></i> HELIX JUMP PRO
+                </h1>
+                <p class="game-subtitle">تحدي القفز الحلزوني المتطور</p>
+            </div>
+            
+            <div class="start-content">
+                <div class="character-selector">
+                    <h3><i class="fas fa-user"></i> اختر شخصيتك</h3>
+                    <div class="characters">
+                        <div class="character-option active" data-character="engineer">
+                            <div class="char-preview">
+                                <i class="fas fa-user-astronaut"></i>
+                            </div>
+                            <span>المهندس</span>
+                        </div>
+                        <div class="character-option" data-character="ninja">
+                            <div class="char-preview">
+                                <i class="fas fa-user-ninja"></i>
+                            </div>
+                            <span>النينجا</span>
+                        </div>
+                        <div class="character-option" data-character="robot">
+                            <div class="char-preview">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <span>الروبوت</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="difficulty-selector">
+                    <h3><i class="fas fa-sliders-h"></i> مستوى الصعوبة</h3>
+                    <div class="difficulties">
+                        <button class="difficulty-btn active" data-difficulty="easy">سهل</button>
+                        <button class="difficulty-btn" data-difficulty="medium">متوسط</button>
+                        <button class="difficulty-btn" data-difficulty="hard">صعب</button>
+                    </div>
+                </div>
+                
+                <div class="start-actions">
+                    <button id="startGameBtn" class="start-btn">
+                        <i class="fas fa-play"></i> ابدأ اللعبة
+                    </button>
+                    <button id="settingsBtn" class="settings-btn">
+                        <i class="fas fa-cog"></i> الإعدادات
+                    </button>
+                    <button id="achievementsBtn" class="achievements-btn">
+                        <i class="fas fa-trophy"></i> الإنجازات
+                    </button>
+                </div>
+                
+                <div class="game-tips">
+                    <h4><i class="fas fa-lightbulb"></i> نصائح سريعة:</h4>
+                    <p>• المس الشاشة للقفز | اسحب لتدوير الحلزون</p>
+                    <p>• تجنب الفخاخ الحمراء والفتحات السوداء</p>
+                    <p>• اجمع النجوم لشراء قدرات خاصة</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة الإعدادات -->
+    <div id="settingsScreen" class="settings-screen">
+        <div class="settings-container">
+            <h2><i class="fas fa-cog"></i> الإعدادات</h2>
+            
+            <div class="settings-section">
+                <h3><i class="fas fa-volume-up"></i> الصوت</h3>
+                <div class="setting-item">
+                    <span>الموسيقى</span>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="musicToggle" checked>
+                        <label for="musicToggle"></label>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <span>الأصوات</span>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="soundToggle" checked>
+                        <label for="soundToggle"></label>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <span>اهتزاز</span>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="vibrationToggle" checked>
+                        <label for="vibrationToggle"></label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h3><i class="fas fa-gamepad"></i> التحكم</h3>
+                <div class="setting-item">
+                    <span>حساسية الدوران</span>
+                    <input type="range" id="rotationSensitivity" min="1" max="10" value="5">
+                    <span id="sensitivityValue">متوسط</span>
+                </div>
+                <div class="setting-item">
+                    <span>قوة القفز</span>
+                    <input type="range" id="jumpPower" min="10" max="20" value="14">
+                    <span id="jumpValue">14</span>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h3><i class="fas fa-palette"></i> المظهر</h3>
+                <div class="theme-selector">
+                    <div class="theme-option active" data-theme="default">
+                        <div class="theme-preview default-theme"></div>
+                        <span>افتراضي</span>
+                    </div>
+                    <div class="theme-option" data-theme="dark">
+                        <div class="theme-preview dark-theme"></div>
+                        <span>داكن</span>
+                    </div>
+                    <div class="theme-option" data-theme="neon">
+                        <div class="theme-preview neon-theme"></div>
+                        <span>نيون</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="settings-actions">
+                <button id="saveSettingsBtn" class="save-btn">
+                    <i class="fas fa-save"></i> حفظ الإعدادات
+                </button>
+                <button id="backToMenuBtn" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> العودة
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- شاشة الإنجازات -->
+    <div id="achievementsScreen" class="achievements-screen">
+        <div class="achievements-container">
+            <h2><i class="fas fa-trophy"></i> الإنجازات</h2>
+            
+            <div class="achievements-list">
+                <div class="achievement unlocked">
+                    <div class="achievement-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="achievement-info">
+                        <h4>البداية</h4>
+                        <p>ابدأ اللعبة لأول مرة</p>
+                    </div>
+                    <div class="achievement-reward">+100 نقطة</div>
+                </div>
+                
+                <div class="achievement locked">
+                    <div class="achievement-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div class="achievement-info">
+                        <h4>القافز المحترف</h4>
+                        <p>اقفز 50 قفزة ناجحة</p>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: 30%"></div>
+                        </div>
+                    </div>
+                    <div class="achievement-reward">+500 نقطة</div>
+                </div>
+                
+                <div class="achievement locked">
+                    <div class="achievement-icon">
+                        <i class="fas fa-gem"></i>
+                    </div>
+                    <div class="achievement-info">
+                        <h4>جامع الكنوز</h4>
+                        <p>اجمع 100 عملة ذهبية</p>
+                        <div class="progress-bar">
+                            <div class="progress" style="width: 10%"></div>
+                        </div>
+                    </div>
+                    <div class="achievement-reward">+1000 نقطة</div>
+                </div>
+            </div>
+            
+            <div class="achievements-stats">
+                <div class="stat">
+                    <span>الإنجازات المفتوحة</span>
+                    <strong>1/15</strong>
+                </div>
+                <div class="stat">
+                    <span>النقاط المجمعة</span>
+                    <strong>100</strong>
+                </div>
+            </div>
+            
+            <button id="backToMenuBtn2" class="back-btn">
+                <i class="fas fa-arrow-left"></i> العودة
+            </button>
+        </div>
+    </div>
+
+    <!-- شاشة اللعبة الرئيسية -->
     <div class="container">
         <header class="game-header">
-            <h1 class="game-title">🎮 HELIX JUMP</h1>
+            <div class="header-top">
+                <button id="pauseBtn" class="pause-btn">
+                    <i class="fas fa-pause"></i>
+                </button>
+                <h1 class="game-title">HELIX JUMP PRO</h1>
+                <button id="shopBtn" class="shop-btn">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="coin-count">150</span>
+                </button>
+            </div>
+            
             <div class="game-stats">
                 <div class="stat">
-                    <span class="stat-label">النقاط</span>
+                    <span class="stat-label">
+                        <i class="fas fa-star"></i> النقاط
+                    </span>
                     <span id="score" class="stat-value">0</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-label">المستوى</span>
+                    <span class="stat-label">
+                        <i class="fas fa-layer-group"></i> المستوى
+                    </span>
                     <span id="level" class="stat-value">1</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-label">الرقم القياسي</span>
+                    <span class="stat-label">
+                        <i class="fas fa-crown"></i> الرقم القياسي
+                    </span>
                     <span id="highScore" class="stat-value">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">
+                        <i class="fas fa-bolt"></i> الطاقة
+                    </span>
+                    <div class="power-bar">
+                        <div class="power-fill" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="active-powers">
+                <div class="power-item" data-power="shield">
+                    <i class="fas fa-shield-alt"></i>
+                    <span class="power-timer">15</span>
+                </div>
+                <div class="power-item" data-power="magnet">
+                    <i class="fas fa-magnet"></i>
+                    <span class="power-timer">10</span>
+                </div>
+                <div class="power-item" data-power="doublejump">
+                    <i class="fas fa-angle-double-up"></i>
+                    <span class="power-timer">5</span>
                 </div>
             </div>
         </header>
 
         <main class="game-area">
-            <canvas id="gameCanvas" width="400" height="600"></canvas>
+            <canvas id="gameCanvas" width="400" height="650"></canvas>
             
             <div class="controls-hint">
                 <div class="control-item">
-                    <span class="control-icon">👆</span>
+                    <span class="control-icon"><i class="fas fa-hand-pointer"></i></span>
                     <span class="control-text">المس للقفز</span>
                 </div>
                 <div class="control-item">
-                    <span class="control-icon">↔️</span>
-                    <span class="control-text">اسحب للتدوير</span>
+                    <span class="control-icon"><i class="fas fa-arrows-alt-h"></i></span>
+                    <span class="control-text">اسحب لتدوير الحلزون</span>
+                </div>
+                <div class="control-item">
+                    <span class="control-icon"><i class="fas fa-running"></i></span>
+                    <span class="control-text">تجنب الفخاخ الحمراء</span>
                 </div>
             </div>
         </main>
 
+        <!-- شاشة الإيقاف المؤقت -->
+        <div id="pauseScreen" class="pause-screen">
+            <div class="pause-content">
+                <h2><i class="fas fa-pause"></i> متوقف مؤقتاً</h2>
+                <button id="resumeBtn" class="resume-btn">
+                    <i class="fas fa-play"></i> متابعة اللعب
+                </button>
+                <button id="restartBtn" class="restart-btn">
+                    <i class="fas fa-redo"></i> إعادة اللعب
+                </button>
+                <button id="mainMenuBtn" class="menu-btn">
+                    <i class="fas fa-home"></i> القائمة الرئيسية
+                </button>
+            </div>
+        </div>
+
+        <!-- شاشة نهاية اللعبة -->
         <div id="gameOverScreen" class="game-over">
             <div class="game-over-content">
-                <h2 class="game-over-title">🏆 GAME OVER</h2>
+                <div class="game-over-header">
+                    <h2 class="game-over-title">
+                        <i class="fas fa-skull-crossbones"></i> GAME OVER
+                    </h2>
+                    <p class="game-over-subtitle">حاول مرة أخرى!</p>
+                </div>
+                
                 <div class="final-stats">
                     <div class="final-stat">
-                        <span class="final-label">النتيجة النهائية:</span>
+                        <span class="final-label">
+                            <i class="fas fa-star"></i> النقاط النهائية
+                        </span>
                         <span id="finalScore" class="final-value">0</span>
                     </div>
                     <div class="final-stat">
-                        <span class="final-label">أعلى نتيجة:</span>
+                        <span class="final-label">
+                            <i class="fas fa-crown"></i> أعلى نتيجة
+                        </span>
                         <span id="finalHighScore" class="final-value">0</span>
                     </div>
                     <div class="final-stat">
-                        <span class="final-label">المستوى:</span>
+                        <span class="final-label">
+                            <i class="fas fa-layer-group"></i> المستوى
+                        </span>
                         <span id="finalLevel" class="final-value">1</span>
                     </div>
+                    <div class="final-stat">
+                        <span class="final-label">
+                            <i class="fas fa-coins"></i> العملات المجمعة
+                        </span>
+                        <span id="finalCoins" class="final-value">0</span>
+                    </div>
                 </div>
-                <button id="restartButton" class="restart-button">🔄 إعادة اللعب</button>
-                <div class="game-tips">
-                    <p>💡 نصائح: تجنب الفخاخ الحمراء والفتحات في المنصات!</p>
+                
+                <div class="game-over-actions">
+                    <button id="restartGameBtn" class="restart-button">
+                        <i class="fas fa-redo"></i> إعادة اللعب
+                    </button>
+                    <button id="shareScoreBtn" class="share-btn">
+                        <i class="fas fa-share-alt"></i> مشاركة النتيجة
+                    </button>
+                    <button id="continueBtn" class="continue-btn">
+                        <i class="fas fa-shopping-cart"></i> مواصلة بـ 50 عملة
+                    </button>
+                </div>
+                
+                <div class="achievements-earned">
+                    <h4><i class="fas fa-trophy"></i> الإنجازات الجديدة</h4>
+                    <div class="achievement-badges">
+                        <div class="badge">
+                            <i class="fas fa-medal"></i>
+                            <span>1000 نقطة</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
+        <!-- متجر اللعبة -->
+        <div id="shopScreen" class="shop-screen">
+            <div class="shop-container">
+                <div class="shop-header">
+                    <h2><i class="fas fa-store"></i> المتجر</h2>
+                    <div class="shop-balance">
+                        <i class="fas fa-coins"></i>
+                        <span id="shopCoins">150</span>
+                    </div>
+                </div>
+                
+                <div class="shop-items">
+                    <div class="shop-item" data-item="shield">
+                        <div class="item-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="item-info">
+                            <h4>درع الحماية</h4>
+                            <p>يمنع ضرر الفخاخ مرة واحدة</p>
+                        </div>
+                        <div class="item-price">
+                            <i class="fas fa-coins"></i> 50
+                        </div>
+                        <button class="buy-btn">شراء</button>
+                    </div>
+                    
+                    <div class="shop-item" data-item="magnet">
+                        <div class="item-icon">
+                            <i class="fas fa-magnet"></i>
+                        </div>
+                        <div class="item-info">
+                            <h4>مغناطيس العملات</hspan>
+                            <p>يجذب العملات تلقائياً لمدة 10 ثوان</p>
+                        </div>
+                        <div class="item-price">
+                            <i class="fas fa-coins"></i> 75
+                        </div>
+                        <button class="buy-btn">شراء</button>
+                    </div>
+                    
+                    <div class="shop-item" data-item="doublejump">
+                        <div class="item-icon">
+                            <i class="fas fa-angle-double-up"></i>
+                        </div>
+                        <div class="item-info">
+                            <h4>القفز المزدوج</h4>
+                            <p>يمكنك القفز مرتين في الهواء</p>
+                        </div>
+                        <div class="item-price">
+                            <i class="fas fa-coins"></i> 100
+                        </div>
+                        <button class="buy-btn">شراء</button>
+                    </div>
+                </div>
+                
+                <button id="closeShopBtn" class="close-btn">
+                    <i class="fas fa-times"></i> إغلاق
+                </button>
+            </div>
+        </div>
+
         <footer class="game-footer">
-            <p class="footer-text">🎯 الهدف: اهبط على المنصات واجمع النجوم لتجنب الفخاخ</p>
-            <p class="footer-note">لعبة Helix Jump - تم التطوير بواسطة مهندس معلوماتية</p>
+            <div class="footer-content">
+                <p class="footer-text">
+                    <i class="fas fa-gamepad"></i> لعبة Helix Jump Pro - الإصدار المتطور
+                </p>
+                <p class="footer-note">
+                    <i class="fas fa-code"></i> تم التطوير بواسطة مهندس معلوماتية
+                </p>
+            </div>
         </footer>
     </div>
+
+    <!-- الرسائل المنبثقة -->
+    <div id="messagePopup" class="message-popup">
+        <div class="message-content">
+            <span id="messageText"></span>
+        </div>
+    </div>
+
+    <!-- الصوتيات -->
+    <audio id="jumpSound" src="https://assets.mixkit.co/sfx/preview/mixkit-player-jumping-in-a-video-game-2043.mp3" preload="auto"></audio>
+    <audio id="coinSound" src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" preload="auto"></audio>
+    <audio id="gameOverSound" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-game-over-1947.mp3" preload="auto"></audio>
+    <audio id="bgMusic" src="https://assets.mixkit.co/music/preview/mixkit-game-level-music-689.mp3" loop preload="auto"></audio>
+    <audio id="powerSound" src="https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3" preload="auto"></audio>
 
     <script src="game.js"></script>
 </body>
