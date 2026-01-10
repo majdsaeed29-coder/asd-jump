@@ -1,3 +1,4 @@
+/* Reset وتنسيقات أساسية */
 * {
     margin: 0;
     padding: 0;
@@ -7,120 +8,369 @@
 }
 
 body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, 
+        #0c0c1d 0%, 
+        #1a1a3e 25%, 
+        #252552 50%, 
+        #1a1a3e 75%, 
+        #0c0c1d 100%);
+    color: #ffffff;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-x: hidden;
     touch-action: manipulation;
-    overscroll-behavior: none;
+}
+
+/* الحاوية الرئيسية */
+.container {
+    width: 100%;
+    max-width: 450px;
+    padding: 20px;
+    position: relative;
+}
+
+/* رأس اللعبة */
+.game-header {
+    background: linear-gradient(135deg, 
+        rgba(255, 107, 157, 0.2), 
+        rgba(107, 157, 255, 0.2));
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: headerGlow 3s infinite alternate;
+}
+
+@keyframes headerGlow {
+    0% { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); }
+    100% { box-shadow: 0 10px 40px rgba(107, 157, 255, 0.3); }
+}
+
+.game-title {
+    text-align: center;
+    font-size: 32px;
+    margin-bottom: 15px;
+    background: linear-gradient(45deg, #ff6b9d, #6b9dff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 20px rgba(107, 157, 255, 0.5);
+}
+
+/* الإحصائيات */
+.game-stats {
+    display: flex;
+    justify-content: space-around;
+    gap: 15px;
+}
+
+.stat {
+    text-align: center;
+    flex: 1;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.stat:hover {
+    transform: translateY(-2px);
+}
+
+.stat-label {
+    display: block;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 24px;
+    font-weight: bold;
+    color: #4dccff;
+    text-shadow: 0 0 10px rgba(77, 204, 255, 0.5);
+}
+
+/* منطقة اللعبة */
+.game-area {
+    position: relative;
+    margin-bottom: 20px;
 }
 
 #gameCanvas {
+    width: 100%;
+    background: linear-gradient(180deg, #0a0a1a 0%, #151530 100%);
+    border-radius: 15px;
+    display: block;
+    box-shadow: 
+        0 0 0 2px rgba(255, 255, 255, 0.05),
+        0 20px 50px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
     touch-action: none;
+    cursor: pointer;
+}
+
+/* تلميحات التحكم */
+.controls-hint {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+}
+
+.control-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.control-icon {
+    font-size: 24px;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+.control-text {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* شاشة نهاية اللعبة */
+.game-over {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 10, 26, 0.95);
+    backdrop-filter: blur(10px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    border-radius: 15px;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.game-over-content {
+    background: linear-gradient(135deg, 
+        rgba(255, 77, 77, 0.1), 
+        rgba(77, 204, 255, 0.1));
+    padding: 30px;
+    border-radius: 20px;
+    text-align: center;
+    max-width: 350px;
+    width: 90%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.game-over-title {
+    font-size: 42px;
+    background: linear-gradient(45deg, #ff4d4d, #ffcc00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 25px;
+    text-shadow: 0 0 20px rgba(255, 77, 77, 0.3);
+}
+
+.final-stats {
+    margin-bottom: 25px;
+}
+
+.final-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.final-stat:last-child {
+    border-bottom: none;
+}
+
+.final-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 16px;
+}
+
+.final-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #4dccff;
+}
+
+.restart-button {
+    background: linear-gradient(45deg, #4dccff, #0099cc);
+    color: white;
+    border: none;
+    padding: 16px 40px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+    width: 100%;
+    box-shadow: 0 10px 20px rgba(0, 153, 204, 0.3);
+}
+
+.restart-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 30px rgba(0, 153, 204, 0.4);
+}
+
+.restart-button:active {
+    transform: translateY(0);
+}
+
+.game-tips {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* تذييل اللعبة */
+.game-footer {
+    text-align: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-text {
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.footer-note {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
 }
 
 /* تأثيرات الجسيمات */
 .particle {
     position: absolute;
     pointer-events: none;
-    border-radius: 50%;
     z-index: 10;
 }
 
-/* تأثيرات الأنيميشن */
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+/* تنسيقات للأجهزة المحمولة */
+@media (max-width: 480px) {
+    .container {
+        padding: 10px;
+        max-width: 100%;
+    }
+    
+    .game-title {
+        font-size: 28px;
+    }
+    
+    .game-stats {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .stat {
+        padding: 8px;
+    }
+    
+    .stat-value {
+        font-size: 20px;
+    }
+    
+    #gameCanvas {
+        height: 500px;
+    }
+    
+    .game-over-title {
+        font-size: 36px;
+    }
+    
+    .restart-button {
+        padding: 14px 30px;
+        font-size: 16px;
+    }
+    
+    .controls-hint {
+        flex-direction: column;
+        gap: 15px;
+    }
 }
 
+/* تنسيقات للأجهزة اللوحية */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .container {
+        max-width: 500px;
+    }
+    
+    #gameCanvas {
+        height: 700px;
+    }
+}
+
+/* تنسيقات للأجهزة العرض الكبير */
+@media (min-width: 1200px) {
+    .container {
+        max-width: 500px;
+    }
+}
+
+/* تأثيرات الأنيميشن */
 @keyframes rotate {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
 
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
 
-@keyframes glow {
-    0%, 100% { 
-        box-shadow: 0 0 5px #4dccff, 0 0 10px #4dccff;
-    }
-    50% { 
-        box-shadow: 0 0 10px #4dccff, 0 0 20px #4dccff;
-    }
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
 }
 
-@keyframes bounce {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
+/* تنسيقات خاصة للشخصية */
+.character-glow {
+    filter: drop-shadow(0 0 10px rgba(77, 204, 255, 0.7));
 }
 
-/* تأثيرات التحميل */
-.loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #0c0c1d, #1a1a3e);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.loading-spinner {
-    width: 60px;
-    height: 60px;
-    border: 4px solid rgba(77, 204, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: #4dccff;
-    animation: rotate 1s linear infinite;
-    margin-bottom: 20px;
-}
-
-.loading-text {
-    color: #4dccff;
-    font-size: 18px;
-    animation: pulse 1.5s infinite;
-}
-
-/* تنسيقات للأجهزة المحمولة */
-@media (max-width: 480px) {
-    body {
-        padding: 5px;
-    }
-    
-    .loading-spinner {
-        width: 40px;
-        height: 40px;
-    }
-    
-    .loading-text {
-        font-size: 14px;
-    }
-}
-
-/* تنسيقات للشاشات الكبيرة */
-@media (min-width: 768px) {
-    #gameContainer {
-        max-width: 450px;
-    }
-}
-
-/* تأثيرات القفز */
-.jump-effect {
-    animation: bounce 0.3s ease;
-}
-
-/* تأثيرات الفخاخ */
+/* تنسيقات للفخاخ */
 .trap-danger {
-    animation: shake 0.3s ease infinite;
+    animation: pulse 0.5s infinite;
 }
 
-/* تأثيرات العملات */
+/* تنسيقات للعملات */
 .coin-glow {
-    animation: glow 1s ease infinite;
+    animation: rotate 2s linear infinite;
 }
 
 /* منع التمرير على الجوال */
@@ -129,4 +379,33 @@ body {
     position: fixed;
     width: 100%;
     height: 100%;
+}
+
+/* تحسينات للأداء */
+canvas {
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-crisp-edges;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+/* تأثيرات التركيز */
+:focus {
+    outline: 2px solid #4dccff;
+    outline-offset: 2px;
+}
+
+/* تنسيقات للرسائل */
+.message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    z-index: 1000;
+    display: none;
 }
