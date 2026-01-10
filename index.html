@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة Helix Jump مع شخصية مخصصة</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="assets/icons/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-helmet-safety"></i> لعبة Helix Jump</h1>
+        <p>تجنب الفخاخ ووصل إلى أسفل البرج الحلزوني باستخدام شخصيتك المفضلة!</p>
+    </div>
+    
+    <div class="character-select">
+        <h3><i class="fas fa-user-circle"></i> اختر شخصيتك</h3>
+        <div class="character-options">
+            <div class="character-option selected" data-character="engineer">
+                <img src="assets/characters/engineer.png" alt="المهندس">
+            </div>
+            <div class="character-option" data-character="astronaut">
+                <img src="assets/characters/astronaut.png" alt="رائد الفضاء">
+            </div>
+            <div class="character-option" data-character="adventurer">
+                <img src="assets/characters/adventurer.png" alt="المغامر">
+            </div>
+            <div class="character-option" data-character="robot">
+                <img src="assets/characters/robot.png" alt="الروبوت">
+            </div>
+        </div>
+        <div class="upload-btn" id="uploadBtn">
+            <i class="fas fa-upload"></i>
+            <span>ارفع صورتك الخاصة</span>
+        </div>
+        <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+        
+        <div class="difficulty">
+            <div class="difficulty-btn active" data-level="easy">سهل</div>
+            <div class="difficulty-btn" data-level="medium">متوسط</div>
+            <div class="difficulty-btn" data-level="hard">صعب</div>
+        </div>
+    </div>
+    
+    <div class="game-container">
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-value" id="score">0</div>
+                <div class="stat-label">النقاط</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="level">1</div>
+                <div class="stat-label">المستوى</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="lives">3</div>
+                <div class="stat-label">الأرواح</div>
+            </div>
+        </div>
+        
+        <div class="game-wrapper">
+            <canvas id="gameCanvas" width="400" height="600"></canvas>
+            
+            <div class="game-over" id="gameOverScreen">
+                <h2>انتهت اللعبة!</h2>
+                <p>النتيجة النهائية: <span id="finalScore">0</span></p>
+                <button class="restart-btn" id="restartBtn"><i class="fas fa-redo"></i> ابدأ من جديد</button>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="control-btn" id="leftBtn"><i class="fas fa-arrow-left"></i></button>
+            <button class="control-btn" id="jumpBtn"><i class="fas fa-arrow-up"></i></button>
+            <button class="control-btn" id="rightBtn"><i class="fas fa-arrow-right"></i></button>
+        </div>
+    </div>
+    
+    <div class="instructions">
+        <h3><i class="fas fa-info-circle"></i> كيفية اللعب</h3>
+        <ul>
+            <li>استخدم أزرار <span class="highlight">اليسار واليمين</span> لتدوير البرج الحلزوني</li>
+            <li>استخدم زر <span class="highlight">القفز</span> لإسقاط شخصيتك للأسفل</li>
+            <li>تجنب <span class="highlight">الفخاخ الحمراء</span> على المنصات</li>
+            <li>اجمع <span class="highlight">النقاط الذهبية</span> لزيادة نقاطك</li>
+            <li>كلما تقدمت في اللعبة، ستزيد صعوبة الفخاخ وحركة البرج</li>
+            <li>لديك <span class="highlight">3 أرواح</span> فقط، فكر جيداً في خطواتك!</li>
+        </ul>
+    </div>
+    
+    <footer>
+        <p>تم التطوير بواسطة مهندس معلوماتية - لعبة Helix Jump مخصصة</p>
+        <p>HTML5 + CSS3 + JavaScript</p>
+    </footer>
+
+    <script src="game.js"></script>
+</body>
+</html>
