@@ -5,176 +5,113 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Helix Jump - القفز الحلزوني</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
-    <style>
-        /* شاشة التحميل */
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #0c0c1d, #1a1a3e);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            transition: opacity 0.5s ease;
-        }
-        
-        .loading-content {
-            text-align: center;
-            color: white;
-        }
-        
-        .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 5px solid rgba(77, 204, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: #4dccff;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-        
-        @keyframes spin {
-            100% { transform: rotate(360deg); }
-        }
-    </style>
 </head>
 <body>
-    <!-- شاشة التحميل -->
-    <div id="loadingScreen" class="loading-screen">
-        <div class="loading-content">
-            <div class="loading-spinner"></div>
-            <h2>جاري تحميل اللعبة...</h2>
-            <p>Helix Jump - النسخة المحسنة</p>
-        </div>
-    </div>
-
-    <!-- الحاوية الرئيسية للعبة -->
-    <div class="container" style="display: none;">
+    <div class="container">
         <!-- رأس اللعبة -->
         <header class="game-header">
-            <div class="header-top">
-                <h1 class="game-title">HELIX JUMP</h1>
-                <button id="pauseBtn" class="pause-btn">
-                    <span class="pause-icon">⏸️</span>
-                </button>
-            </div>
+            <h1 class="game-title">
+                <i class="fas fa-circle-notch"></i> HELIX JUMP
+            </h1>
             
             <div class="game-stats">
                 <div class="stat">
-                    <span class="stat-label">النقاط</span>
+                    <span class="stat-label">
+                        <i class="fas fa-star"></i> النقاط
+                    </span>
                     <span id="score" class="stat-value">0</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-label">المستوى</span>
+                    <span class="stat-label">
+                        <i class="fas fa-layer-group"></i> المستوى
+                    </span>
                     <span id="level" class="stat-value">1</span>
                 </div>
                 <div class="stat">
-                    <span class="stat-label">الرقم القياسي</span>
+                    <span class="stat-label">
+                        <i class="fas fa-trophy"></i> الأعلى
+                    </span>
                     <span id="highScore" class="stat-value">0</span>
                 </div>
             </div>
-            
-            <!-- قوة القفز المزدوج -->
-            <div class="power-indicator">
-                <div class="power-icon">⚡</div>
-                <span>القفز المزدوج: <span id="doubleJumpCount">0</span></span>
-            </div>
         </header>
 
-        <!-- منطقة اللعبة -->
+        <!-- منطقة اللعبة الرئيسية -->
         <main class="game-area">
             <canvas id="gameCanvas" width="400" height="650"></canvas>
             
             <!-- تلميحات التحكم -->
             <div class="controls-hint">
                 <div class="control-item">
-                    <span class="control-icon">👆</span>
-                    <span class="control-text">المس للقفز</span>
+                    <span class="control-icon">↻</span>
+                    <span class="control-text">اسحب لتدوير الأسطوانة</span>
                 </div>
                 <div class="control-item">
-                    <span class="control-icon">↔️</span>
-                    <span class="control-text">اسحب للتدوير</span>
+                    <span class="control-icon">👤</span>
+                    <span class="control-text">الشخصية تنط تلقائياً</span>
                 </div>
                 <div class="control-item">
-                    <span class="control-icon">⚠️</span>
-                    <span class="control-text">تجنب الأحمر</span>
+                    <span class="control-icon">💀</span>
+                    <span class="control-text">تجنب الفخاخ الحمراء</span>
                 </div>
             </div>
         </main>
 
-        <!-- شاشة الإيقاف المؤقت -->
-        <div id="pauseScreen" class="pause-screen">
-            <div class="pause-content">
-                <h2>⏸️ متوقف مؤقتاً</h2>
-                <div class="pause-stats">
-                    <div class="pause-stat">
-                        <span>النقاط:</span>
-                        <span id="pauseScore">0</span>
-                    </div>
-                    <div class="pause-stat">
-                        <span>المستوى:</span>
-                        <span id="pauseLevel">1</span>
-                    </div>
-                </div>
-                <button id="resumeBtn" class="game-btn resume-btn">
-                    ▶️ متابعة
-                </button>
-                <button id="restartBtn" class="game-btn restart-btn">
-                    🔄 إعادة
-                </button>
-            </div>
-        </div>
-
         <!-- شاشة نهاية اللعبة -->
         <div id="gameOverScreen" class="game-over">
             <div class="game-over-content">
-                <h2 class="game-over-title">🎮 GAME OVER</h2>
+                <h2 class="game-over-title">
+                    <i class="fas fa-gamepad"></i> GAME OVER
+                </h2>
+                
                 <div class="final-stats">
                     <div class="final-stat">
-                        <span class="final-label">النقاط:</span>
+                        <span class="final-label">النقاط النهائية</span>
                         <span id="finalScore" class="final-value">0</span>
                     </div>
                     <div class="final-stat">
-                        <span class="final-label">أعلى نتيجة:</span>
+                        <span class="final-label">أعلى نتيجة</span>
                         <span id="finalHighScore" class="final-value">0</span>
                     </div>
                     <div class="final-stat">
-                        <span class="final-label">المستوى:</span>
+                        <span class="final-label">المستوى</span>
                         <span id="finalLevel" class="final-value">1</span>
                     </div>
                 </div>
-                <button id="restartGameBtn" class="game-btn restart-button">
-                    🔄 إعادة اللعب
+                
+                <button id="restartButton" class="restart-button">
+                    <i class="fas fa-redo"></i> إعادة اللعب
                 </button>
+                
                 <div class="game-tips">
-                    <p>💡 تلميح: ركز على الفتحات الصغيرة واتبع إيقاع المنصات!</p>
+                    <p><i class="fas fa-lightbulb"></i> تلميح: ركز على تدوير الأسطوانة في الوقت المناسب!</p>
                 </div>
-            </div>
-        </div>
-
-        <!-- رسائل المنبثقة -->
-        <div id="messagePopup" class="message-popup">
-            <div class="message-content">
-                <span id="messageText"></span>
             </div>
         </div>
 
         <!-- تذييل اللعبة -->
         <footer class="game-footer">
-            <p class="footer-text">🎯 هدفك: اهبط على المنصات وتجنب الفخاخ</p>
-            <p class="footer-note">تم التطوير بواسطة مهندس معلوماتية</p>
+            <p class="footer-text">
+                <i class="fas fa-gamepad"></i> لعبة Helix Jump - نسخة محسنة
+            </p>
+            <p class="footer-note">
+                <i class="fas fa-code"></i> تم التطوير بواسطة مهندس معلوماتية
+            </p>
         </footer>
     </div>
 
-    <!-- ملفات الصوت -->
-    <audio id="jumpSound" src="https://assets.mixkit.co/sfx/preview/mixkit-player-jumping-in-a-video-game-2043.mp3" preload="auto"></audio>
-    <audio id="coinSound" src="https://assets.mixkit.co/sfx/preview/mixkit-coin-win-notification-1998.mp3" preload="auto"></audio>
-    <audio id="gameOverSound" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-game-over-1947.mp3" preload="auto"></audio>
-    <audio id="bgMusic" src="https://assets.mixkit.co/music/preview/mixkit-game-level-music-689.mp3" loop preload="auto"></audio>
+    <!-- الصوتيات -->
+    <audio id="jumpSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-player-jumping-in-a-video-game-2043.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="coinSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-coin-win-notification-1998.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="gameOverSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-retro-game-over-1947.mp3" type="audio/mpeg">
+    </audio>
 
     <script src="game.js"></script>
 </body>
