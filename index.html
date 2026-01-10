@@ -2,67 +2,182 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Helix Jump - القفز الحلزوني</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Helix Jump - القفز الحلزوني الإصدار الخارق</title>
+    <meta name="description" content="لعبة Helix Jump محسنة مع تأثيرات 3D وميزات جديدة">
+    <meta name="theme-color" content="#0D47A1">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
 </head>
 <body>
+    <!-- شاشة التحميل -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">جاري تحميل اللعبة...</div>
+    </div>
+
+    <!-- الحاوية الرئيسية -->
     <div class="container">
         <!-- رأس اللعبة -->
         <header class="game-header">
+            <div class="quick-controls">
+                <button id="pauseButton" class="control-btn" title="إيقاف مؤقت">
+                    <i class="fas fa-pause"></i>
+                </button>
+                <button id="soundToggle" class="control-btn" title="تشغيل/إيقاف الصوت">
+                    <i class="fas fa-volume-up"></i>
+                </button>
+            </div>
+            
             <h1 class="game-title">
                 <i class="fas fa-circle-notch"></i> HELIX JUMP
             </h1>
             
-            <div class="game-stats">
-                <div class="stat">
-                    <span class="stat-label">
-                        <i class="fas fa-star"></i> النقاط
-                    </span>
-                    <span id="score" class="stat-value">0</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">
-                        <i class="fas fa-layer-group"></i> المستوى
-                    </span>
-                    <span id="level" class="stat-value">1</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">
-                        <i class="fas fa-trophy"></i> الأعلى
-                    </span>
-                    <span id="highScore" class="stat-value">0</span>
-                </div>
+            <div class="quick-controls">
+                <button id="shopButton" class="control-btn" title="المتجر">
+                    <i class="fas fa-shopping-cart"></i>
+                </button>
+                <button id="statsButton" class="control-btn" title="الإحصائيات">
+                    <i class="fas fa-chart-line"></i>
+                </button>
             </div>
         </header>
 
+        <!-- الإحصائيات -->
+        <div class="game-stats">
+            <div class="stat">
+                <span class="stat-label">
+                    <i class="fas fa-star"></i> النقاط
+                </span>
+                <span id="score" class="stat-value">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">
+                    <i class="fas fa-layer-group"></i> المستوى
+                </span>
+                <span id="level" class="stat-value">1</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">
+                    <i class="fas fa-trophy"></i> الأعلى
+                </span>
+                <span id="highScore" class="stat-value">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">
+                    <i class="fas fa-coins"></i> العملات
+                </span>
+                <span id="totalCoins" class="stat-value">0</span>
+            </div>
+        </div>
+
         <!-- منطقة اللعبة الرئيسية -->
         <main class="game-area">
-            <canvas id="gameCanvas" width="400" height="650"></canvas>
-            
-            <!-- تلميحات التحكم -->
-            <div class="controls-hint">
-                <div class="control-item">
-                    <span class="control-icon">↻</span>
-                    <span class="control-text">اسحب لتدوير الأسطوانة</span>
-                </div>
-                <div class="control-item">
-                    <span class="control-icon">👤</span>
-                    <span class="control-text">الشخصية تنط تلقائياً</span>
-                </div>
-                <div class="control-item">
-                    <span class="control-icon">💀</span>
-                    <span class="control-text">تجنب الفخاخ الحمراء</span>
-                </div>
-            </div>
+            <canvas id="gameCanvas"></canvas>
         </main>
 
+        <!-- التحكم السريع -->
+        <div class="action-buttons">
+            <button onclick="game.jump()" class="action-btn">
+                <i class="fas fa-arrow-up"></i>
+                <span>نط</span>
+            </button>
+            <button onclick="game.restartGame()" class="action-btn">
+                <i class="fas fa-redo"></i>
+                <span>إعادة</span>
+            </button>
+            <button onclick="game.togglePause()" class="action-btn">
+                <i class="fas fa-pause"></i>
+                <span>إيقاف</span>
+            </button>
+            <button onclick="game.toggleSound()" class="action-btn">
+                <i class="fas fa-volume-up"></i>
+                <span>صوت</span>
+            </button>
+        </div>
+
+        <!-- إحصائيات إضافية -->
+        <div class="game-stats">
+            <div class="stat">
+                <span class="stat-label">
+                    <i class="fas fa-running"></i> النطات
+                </span>
+                <span id="jumpsCount" class="stat-value">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">
+                    <i class="fas fa-coins"></i> المجموعة
+                </span>
+                <span id="coinsCount" class="stat-value">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">
+                    <i class="fas fa-bullseye"></i> الدقة
+                </span>
+                <span id="accuracy" class="stat-value">100%</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">
+                    <i class="fas fa-fire"></i> الكومبو
+                </span>
+                <span id="combo" class="stat-value">x1</span>
+            </div>
+        </div>
+
+        <!-- اختيار الصعوبة -->
+        <div class="difficulty-selector">
+            <label class="difficulty-label">
+                <i class="fas fa-sliders-h"></i> مستوى الصعوبة
+            </label>
+            <select id="difficultySelect" class="difficulty-select">
+                <option value="EASY">سهل</option>
+                <option value="NORMAL" selected>عادي</option>
+                <option value="HARD">صعب</option>
+                <option value="EXTREME">متطرف</option>
+            </select>
+        </div>
+
+        <!-- تلميحات التحكم -->
+        <div class="controls-hint">
+            <div class="control-item">
+                <span class="control-icon">↻</span>
+                <span class="control-text">اسحب لتدوير الأسطوانة</span>
+            </div>
+            <div class="control-item">
+                <span class="control-icon">👆</span>
+                <span class="control-text">انقر/المس للنط</span>
+            </div>
+            <div class="control-item">
+                <span class="control-icon">💎</span>
+                <span class="control-text">اجمع العملات والقدرات</span>
+            </div>
+        </div>
+
+        <!-- شاشة إيقاف مؤقت -->
+        <div id="pauseScreen" class="overlay-screen">
+            <div class="screen-content">
+                <h2 class="screen-title">
+                    <i class="fas fa-pause-circle"></i> اللعبة متوقفة
+                </h2>
+                
+                <div class="game-tips">
+                    <p><i class="fas fa-lightbulb"></i> تلميح: استخدم النطات الإضافية للهروب من المواقف الصعبة!</p>
+                </div>
+                
+                <button id="resumeButton" class="resume-button">
+                    <i class="fas fa-play"></i> استئناف اللعب
+                </button>
+            </div>
+        </div>
+
         <!-- شاشة نهاية اللعبة -->
-        <div id="gameOverScreen" class="game-over">
-            <div class="game-over-content">
-                <h2 class="game-over-title">
+        <div id="gameOverScreen" class="overlay-screen">
+            <div class="screen-content">
+                <h2 class="screen-title">
                     <i class="fas fa-gamepad"></i> GAME OVER
                 </h2>
                 
@@ -79,6 +194,18 @@
                         <span class="final-label">المستوى</span>
                         <span id="finalLevel" class="final-value">1</span>
                     </div>
+                    <div class="final-stat">
+                        <span class="final-label">عدد النطات</span>
+                        <span id="finalJumps" class="final-value">0</span>
+                    </div>
+                    <div class="final-stat">
+                        <span class="final-label">العملات المجموعة</span>
+                        <span id="finalCoins" class="final-value">0</span>
+                    </div>
+                    <div class="final-stat">
+                        <span class="final-label">دقة النط</span>
+                        <span id="finalAccuracy" class="final-value">100%</span>
+                    </div>
                 </div>
                 
                 <button id="restartButton" class="restart-button">
@@ -86,23 +213,114 @@
                 </button>
                 
                 <div class="game-tips">
-                    <p><i class="fas fa-lightbulb"></i> تلميح: ركز على تدوير الأسطوانة في الوقت المناسب!</p>
+                    <p><i class="fas fa-lightbulb"></i> جرب مستوى الصعوبة المتطرف لتحدي أكبر!</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- متجر اللعبة -->
+        <div id="shopScreen" class="overlay-screen">
+            <div class="screen-content">
+                <h2 class="screen-title">
+                    <i class="fas fa-shopping-cart"></i> متجر اللعبة
+                </h2>
+                
+                <div class="shop-coins">
+                    <p style="color: #ffd600; font-size: 20px; margin: 15px 0;">
+                        <i class="fas fa-coins"></i> رصيدك: <span id="shopCoins">0</span> عملة
+                    </p>
+                </div>
+                
+                <div class="shop-items">
+                    <div id="buyShield" class="shop-item">
+                        <span class="shop-item-icon">🛡️</span>
+                        <div class="shop-item-name">درع الحماية</div>
+                        <div class="shop-item-price">
+                            <i class="fas fa-coins"></i> <span id="shieldPrice">100</span>
+                        </div>
+                    </div>
+                    
+                    <div id="buyDoubleCoins" class="shop-item">
+                        <span class="shop-item-icon">2×</span>
+                        <div class="shop-item-name">عملات مزدوجة</div>
+                        <div class="shop-item-price">
+                            <i class="fas fa-coins"></i> <span id="doubleCoinsPrice">150</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="game-tips">
+                    <p><i class="fas fa-lightbulb"></i> استخدم الدرع للحماية من الفخاخ!</p>
+                </div>
+                
+                <button onclick="game.toggleShop()" class="restart-button" style="background: linear-gradient(45deg, #2196F3, #03A9F4);">
+                    <i class="fas fa-times"></i> إغلاق المتجر
+                </button>
+            </div>
+        </div>
+
+        <!-- إحصائيات متقدمة -->
+        <div id="statsScreen" class="overlay-screen">
+            <div class="screen-content">
+                <h2 class="screen-title">
+                    <i class="fas fa-chart-line"></i> إحصائيات اللاعب
+                </h2>
+                
+                <div class="advanced-stats">
+                    <div class="advanced-stat">
+                        <div class="advanced-stat-value" id="statsGamesPlayed">0</div>
+                        <div class="advanced-stat-label">مباريات لعبت</div>
+                    </div>
+                    <div class="advanced-stat">
+                        <div class="advanced-stat-value" id="statsTotalJumps">0</div>
+                        <div class="advanced-stat-label">إجمالي النطات</div>
+                    </div>
+                    <div class="advanced-stat">
+                        <div class="advanced-stat-value" id="statsTotalCoins">0</div>
+                        <div class="advanced-stat-label">العملات المجموعة</div>
+                    </div>
+                    <div class="advanced-stat">
+                        <div class="advanced-stat-value" id="statsHighScore">0</div>
+                        <div class="advanced-stat-label">أعلى نتيجة</div>
+                    </div>
+                    <div class="advanced-stat">
+                        <div class="advanced-stat-value" id="statsAccuracy">100%</div>
+                        <div class="advanced-stat-label">دقة النط</div>
+                    </div>
+                    <div class="advanced-stat">
+                        <div class="advanced-stat-value" id="statsLongestCombo">0</div>
+                        <div class="advanced-stat-label">أطول كومبو</div>
+                    </div>
+                    <div class="advanced-stat">
+                        <div class="advanced-stat-value" id="statsPerfectJumps">0</div>
+                        <div class="advanced-stat-label">نطات مثالية</div>
+                    </div>
+                    <div class="advanced-stat">
+                        <div class="advanced-stat-value" id="statsTrapsAvoided">0</div>
+                        <div class="advanced-stat-label">فخاخ تجنبت</div>
+                    </div>
+                </div>
+                
+                <button onclick="game.toggleStats()" class="restart-button" style="background: linear-gradient(45deg, #9C27B0, #E91E63);">
+                    <i class="fas fa-times"></i> إغلاق الإحصائيات
+                </button>
             </div>
         </div>
 
         <!-- تذييل اللعبة -->
         <footer class="game-footer">
             <p class="footer-text">
-                <i class="fas fa-gamepad"></i> لعبة Helix Jump - نسخة محسنة
+                <i class="fas fa-gamepad"></i> Helix Jump - الإصدار الخارق 6.0
             </p>
             <p class="footer-note">
                 <i class="fas fa-code"></i> تم التطوير بواسطة مهندس معلوماتية
+                <span style="margin: 0 10px;">•</span>
+                <i class="fas fa-mobile-alt"></i> يدعم اللمس والاهتزاز
             </p>
         </footer>
     </div>
 
-    <!-- الصوتيات -->
+    <!-- الصوتيات المحسنة -->
     <audio id="jumpSound" preload="auto">
         <source src="https://assets.mixkit.co/sfx/preview/mixkit-player-jumping-in-a-video-game-2043.mp3" type="audio/mpeg">
     </audio>
@@ -112,7 +330,47 @@
     <audio id="gameOverSound" preload="auto">
         <source src="https://assets.mixkit.co/sfx/preview/mixkit-retro-game-over-1947.mp3" type="audio/mpeg">
     </audio>
+    <audio id="powerUpSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="shieldSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-magic-sparkles-3007.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="trapSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-explosion-hit-2994.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="backgroundMusic" preload="auto">
+        <source src="https://assets.mixkit.co/music/preview/mixkit-game-level-music-689.mp3" type="audio/mpeg">
+    </audio>
 
+    <!-- ملف اللعبة الرئيسي -->
     <script src="game.js"></script>
+
+    <!-- تهيئة اللعبة -->
+    <script>
+        // إخفاء شاشة التحميل
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                document.getElementById('loadingScreen').style.display = 'none';
+            }, 1500);
+        });
+
+        // تعريف كائن اللعبة عالمياً للتحكم من الأزرار
+        let game;
+
+        // جعل اللعبة متاحة من وحدة التحكم للمطورين
+        window.makeGameAvailable = function() {
+            if (game) {
+                console.log('🎮 اللعبة متاحة الآن كـ game في وحدة التحكم');
+                console.log('🔧 الأوامر المتاحة:');
+                console.log('  game.jump() - نط');
+                console.log('  game.togglePause() - إيقاف/استئناف');
+                console.log('  game.toggleSound() - تشغيل/إيقاف الصوت');
+                console.log('  game.restartGame() - إعادة تشغيل');
+                console.log('  game.changeDifficulty("HARD") - تغيير الصعوبة');
+                return game;
+            }
+        };
+    </script>
 </body>
 </html>
