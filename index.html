@@ -82,19 +82,19 @@
 
         <!-- التحكم السريع -->
         <div class="action-buttons">
-            <button onclick="game.jump()" class="action-btn">
+            <button data-action="jump" class="action-btn">
                 <i class="fas fa-arrow-up"></i>
                 <span>نط</span>
             </button>
-            <button onclick="game.restartGame()" class="action-btn">
+            <button data-action="restart" class="action-btn">
                 <i class="fas fa-redo"></i>
                 <span>إعادة</span>
             </button>
-            <button onclick="game.togglePause()" class="action-btn">
+            <button data-action="pause" class="action-btn">
                 <i class="fas fa-pause"></i>
                 <span>إيقاف</span>
             </button>
-            <button onclick="game.toggleSound()" class="action-btn">
+            <button data-action="sound" class="action-btn">
                 <i class="fas fa-volume-up"></i>
                 <span>صوت</span>
             </button>
@@ -253,7 +253,7 @@
                     <p><i class="fas fa-lightbulb"></i> استخدم الدرع للحماية من الفخاخ!</p>
                 </div>
                 
-                <button onclick="game.toggleShop()" class="restart-button" style="background: linear-gradient(45deg, #2196F3, #03A9F4);">
+                <button class="restart-button" style="background: linear-gradient(45deg, #2196F3, #03A9F4);" onclick="window.game && window.game.toggleShop()">
                     <i class="fas fa-times"></i> إغلاق المتجر
                 </button>
             </div>
@@ -301,7 +301,7 @@
                     </div>
                 </div>
                 
-                <button onclick="game.toggleStats()" class="restart-button" style="background: linear-gradient(45deg, #9C27B0, #E91E63);">
+                <button class="restart-button" style="background: linear-gradient(45deg, #9C27B0, #E91E63);" onclick="window.game && window.game.toggleStats()">
                     <i class="fas fa-times"></i> إغلاق الإحصائيات
                 </button>
             </div>
@@ -345,32 +345,5 @@
 
     <!-- ملف اللعبة الرئيسي -->
     <script src="game.js"></script>
-
-    <!-- تهيئة اللعبة -->
-    <script>
-        // إخفاء شاشة التحميل
-        window.addEventListener('load', function() {
-            setTimeout(function() {
-                document.getElementById('loadingScreen').style.display = 'none';
-            }, 1500);
-        });
-
-        // تعريف كائن اللعبة عالمياً للتحكم من الأزرار
-        let game;
-
-        // جعل اللعبة متاحة من وحدة التحكم للمطورين
-        window.makeGameAvailable = function() {
-            if (game) {
-                console.log('🎮 اللعبة متاحة الآن كـ game في وحدة التحكم');
-                console.log('🔧 الأوامر المتاحة:');
-                console.log('  game.jump() - نط');
-                console.log('  game.togglePause() - إيقاف/استئناف');
-                console.log('  game.toggleSound() - تشغيل/إيقاف الصوت');
-                console.log('  game.restartGame() - إعادة تشغيل');
-                console.log('  game.changeDifficulty("HARD") - تغيير الصعوبة');
-                return game;
-            }
-        };
-    </script>
 </body>
 </html>
