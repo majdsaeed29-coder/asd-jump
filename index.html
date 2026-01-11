@@ -1,249 +1,229 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Helix Jump - الشخصية ثابتة</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #0D47A1, #1976D2);
-            color: white;
-            font-family: Arial, sans-serif;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
-        
-        .container {
-            width: 100%;
-            max-width: 450px;
-            padding: 20px;
-            text-align: center;
-        }
-        
-        .header {
-            margin-bottom: 20px;
-        }
-        
-        .header h1 {
-            color: #FF4081;
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-        
-        .game-area {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 20px;
-            padding: 10px;
-            margin-bottom: 20px;
-            position: relative;
-            height: 500px;
-        }
-        
-        canvas {
-            width: 100%;
-            height: 100%;
-            border-radius: 15px;
-            display: block;
-        }
-        
-        .stats {
-            display: flex;
-            justify-content: space-around;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .stat-item {
-            text-align: center;
-        }
-        
-        .stat-label {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.8);
-            margin-bottom: 5px;
-        }
-        
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #FFD600;
-        }
-        
-        .controls {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .control-btn {
-            background: linear-gradient(45deg, #FF4081, #FF9100);
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: transform 0.2s;
-        }
-        
-        .control-btn:active {
-            transform: scale(0.95);
-        }
-        
-        .instructions {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 15px;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-        
-        .instructions h3 {
-            color: #FFD600;
-            margin-bottom: 10px;
-        }
-        
-        .instructions p {
-            margin-bottom: 5px;
-        }
-        
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #0D47A1, #1976D2);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        
-        .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 5px solid rgba(255, 255, 255, 0.3);
-            border-top-color: #FF4081;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .loading-text {
-            font-size: 18px;
-            color: white;
-        }
-        
-        .warning {
-            background: rgba(255, 87, 34, 0.2);
-            border: 2px solid #FF5722;
-            padding: 10px;
-            border-radius: 10px;
-            margin-top: 10px;
-            font-size: 12px;
-        }
-    </style>
+    <title>مهندس المعلوماتية - لعبة الأسطوانة</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
     <!-- شاشة التحميل -->
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-spinner"></div>
-        <div class="loading-text">جاري تحميل اللعبة...</div>
+        <div class="loading-text">🚀 جاري تحميل اللعبة...</div>
+        <div class="loading-subtext">مهندس المعلوماتية يستعد للقفز!</div>
     </div>
 
-    <!-- الحاوية الرئيسية -->
-    <div class="container">
-        <!-- العنوان -->
-        <div class="header">
-            <h1>🎮 Helix Jump</h1>
-            <p>الشخصية ثابتة - الأسطوانة تدور</p>
+    <!-- شاشة البداية -->
+    <div id="startScreen" class="overlay-screen">
+        <div class="screen-content">
+            <div class="screen-title">
+                <i class="fas fa-gamepad"></i>
+                مهندس المعلوماتية
+            </div>
+            <div class="character-display">
+                <img src="./assets/engineer.png" alt="مهندس" id="characterImg">
+                <div class="character-name">المهندس أحمد</div>
+            </div>
+            <p class="screen-description">
+                🎮 مهمتك: قفز على الأسطوانة وتجنب الفجوات!<br>
+                💡 استخدم النطات بحكمة واجمع العملات
+            </p>
+            
+            <div class="difficulty-selector">
+                <label class="difficulty-label">
+                    <i class="fas fa-sliders-h"></i>
+                    اختر الصعوبة:
+                </label>
+                <select id="difficultySelect" class="difficulty-select">
+                    <option value="EASY">سهل</option>
+                    <option value="NORMAL" selected>عادي</option>
+                    <option value="HARD">صعب</option>
+                    <option value="EXTREME">خارق</option>
+                </select>
+            </div>
+
+            <button id="startButton" class="start-button">
+                <i class="fas fa-play"></i>
+                ابدأ اللعب
+            </button>
+
+            <div class="instructions-box">
+                <h3><i class="fas fa-info-circle"></i> كيفية اللعب:</h3>
+                <ul>
+                    <li><i class="fas fa-mouse-pointer"></i> اسحب لتدوير الأسطوانة</li>
+                    <li><i class="fas fa-arrow-up"></i> اضغط السهم الأعلى للنط</li>
+                    <li><i class="fas fa-bolt"></i> النطات المحدودة: 3</li>
+                    <li><i class="fas fa-skull-crossbones"></i> تجنب الفجوات الحمراء</li>
+                    <li><i class="fas fa-coins"></i> اجمع العملات الذهبية</li>
+                </ul>
+            </div>
         </div>
+    </div>
+
+    <!-- شاشة اللعبة الرئيسية -->
+    <div class="container" id="gameContainer" style="display: none;">
+        <!-- الرأس -->
+        <header class="game-header">
+            <div class="game-title">
+                <i class="fas fa-helmet-safety"></i>
+                <span>مهندس الأسطوانة</span>
+                <span class="game-version">v10.0</span>
+            </div>
+            <div class="quick-controls">
+                <button class="control-btn" id="pauseBtn" title="إيقاف مؤقت">
+                    <i class="fas fa-pause"></i>
+                </button>
+                <button class="control-btn" id="soundBtn" title="الصوت">
+                    <i class="fas fa-volume-up"></i>
+                </button>
+                <button class="control-btn" id="helpBtn" title="مساعدة">
+                    <i class="fas fa-question"></i>
+                </button>
+            </div>
+        </header>
 
         <!-- الإحصائيات -->
-        <div class="stats">
-            <div class="stat-item">
-                <div class="stat-label">النقاط</div>
+        <div class="game-stats">
+            <div class="stat">
+                <div class="stat-label">
+                    <i class="fas fa-trophy"></i>
+                    النقاط
+                </div>
                 <div id="score" class="stat-value">0</div>
             </div>
-            <div class="stat-item">
-                <div class="stat-label">المستوى</div>
+            <div class="stat">
+                <div class="stat-label">
+                    <i class="fas fa-chart-line"></i>
+                    المستوى
+                </div>
                 <div id="level" class="stat-value">1</div>
             </div>
-            <div class="stat-item">
-                <div class="stat-label">الأعلى</div>
+            <div class="stat">
+                <div class="stat-label">
+                    <i class="fas fa-crown"></i>
+                    الأعلى
+                </div>
                 <div id="highScore" class="stat-value">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">
+                    <i class="fas fa-bolt"></i>
+                    النطات
+                </div>
+                <div id="jumpsCount" class="stat-value">3</div>
             </div>
         </div>
 
         <!-- منطقة اللعبة -->
         <div class="game-area">
             <canvas id="gameCanvas"></canvas>
+            <div class="combo-display" id="comboDisplay"></div>
         </div>
 
-        <!-- التحكم -->
-        <div class="controls">
-            <button class="control-btn" data-action="jump">
-                <span style="font-size: 20px;">👆</span>
-                <span>نطة خفيفة</span>
-            </button>
-            <button class="control-btn" data-action="restart">
-                <span style="font-size: 20px;">🔄</span>
-                <span>إعادة</span>
-            </button>
-        </div>
-
-        <!-- التعليمات -->
-        <div class="instructions">
-            <h3>🎮 كيفية اللعب:</h3>
-            <p>✅ <strong>الشخصية ثابتة تماماً</strong> في المنتصف</p>
-            <p>🔄 <strong>اسحب</strong> لتدوير الأسطوانة</p>
-            <p>👆 <strong>انقر "نطة خفيفة"</strong> للقفز في المكان</p>
-            <p>💀 <strong>تجنب الفجوات</strong> عند دوران الأسطوانة</p>
-            <p>💰 <strong>اجمع العملات</strong> الصفراء</p>
-            
-            <div class="warning">
-                ⚠️ <strong>ملاحظة:</strong> الشخصية لا تنط عند لمس الشاشة!<br>
-                استخدم زر "نطة خفيفة" فقط للقفز.
+        <!-- التلميحات -->
+        <div class="controls-hint">
+            <div class="control-item">
+                <div class="control-icon">👆</div>
+                <div class="control-text">النط</div>
             </div>
+            <div class="control-item">
+                <div class="control-icon">↔️</div>
+                <div class="control-text">تدوير</div>
+            </div>
+            <div class="control-item">
+                <div class="control-icon">🎯</div>
+                <div class="control-text">تجنب الفجوات</div>
+            </div>
+        </div>
+
+        <!-- أزرار التحكم -->
+        <div class="action-buttons">
+            <button class="action-btn" id="leftBtn">
+                <i class="fas fa-arrow-left"></i>
+                يسار
+            </button>
+            <button class="action-btn" id="jumpBtn">
+                <i class="fas fa-arrow-up"></i>
+                نطة
+            </button>
+            <button class="action-btn" id="rightBtn">
+                يمين
+                <i class="fas fa-arrow-right"></i>
+            </button>
+            <button class="action-btn" id="restartBtn">
+                <i class="fas fa-redo"></i>
+                إعادة
+            </button>
+        </div>
+
+        <!-- متجر اللعبة -->
+        <div class="shop-section">
+            <h3><i class="fas fa-store"></i> متجر المهندس</h3>
+            <div class="shop-items" id="shopItems">
+                <!-- سيتم ملؤها بالجافاسكربت -->
+            </div>
+        </div>
+
+        <!-- تذييل -->
+        <footer class="game-footer">
+            <div class="footer-text">
+                <i class="fas fa-code"></i>
+                صنع بكل ❤️ بواسطة مهندس معلوماتية
+            </div>
+            <div class="footer-note">
+                <i class="fas fa-exclamation-triangle"></i>
+                الشخصية تتحرك عمودياً والأسطوانة تدور
+            </div>
+        </footer>
+    </div>
+
+    <!-- شاشة الإحصائيات -->
+    <div id="statsScreen" class="overlay-screen" style="display: none;">
+        <div class="screen-content">
+            <div class="screen-title">
+                <i class="fas fa-chart-bar"></i>
+                إحصائياتك
+            </div>
+            <div class="advanced-stats" id="advancedStats">
+                <!-- سيتم ملؤها -->
+            </div>
+            <button class="resume-button" id="resumeBtn">
+                <i class="fas fa-play"></i>
+                استمر في اللعب
+            </button>
         </div>
     </div>
 
-    <!-- ملف اللعبة -->
+    <!-- شاشة نهاية اللعبة -->
+    <div id="gameOverScreen" class="overlay-screen" style="display: none;">
+        <div class="screen-content">
+            <div class="screen-title">
+                <i class="fas fa-game-over"></i>
+                انتهت اللعبة!
+            </div>
+            <div class="final-stats" id="finalStats">
+                <!-- سيتم ملؤها -->
+            </div>
+            <div class="achievement-badge" id="achievementBadge">
+                <!-- سيتم ملؤها -->
+            </div>
+            <button class="restart-button" id="gameOverRestartBtn">
+                <i class="fas fa-redo"></i>
+                العب مرة أخرى
+            </button>
+            <button class="share-button" id="shareBtn">
+                <i class="fas fa-share-alt"></i>
+                شارك نتيجتك
+            </button>
+        </div>
+    </div>
+
+    <!-- ملفات الجافاسكربت -->
     <script src="game.js"></script>
-    
-    <script>
-        // إخفاء شاشة التحميل بعد ثانيتين
-        setTimeout(() => {
-            const loadingScreen = document.getElementById('loadingScreen');
-            if (loadingScreen) {
-                loadingScreen.style.display = 'none';
-            }
-        }, 2000);
-    </script>
+    <script src="sound.js"></script>
+    <script src="shop.js"></script>
 </body>
 </html>
