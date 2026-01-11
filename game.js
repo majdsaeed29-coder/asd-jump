@@ -137,9 +137,6 @@ class HelixJump {
             perfectJumps: 0
         };
         
-        // تحميل صور الشخصية
-        this.loadCharacterImages();
-        
         // عناصر اللعبة المحسنة
         this.platforms = [];
         this.traps = [];
@@ -169,47 +166,52 @@ class HelixJump {
             trap: document.getElementById('trapSound'),
             background: document.getElementById('backgroundMusic'),
             
-            play: function(sound, volume = 0.7) {
-                if (!this[sound] || !this.game.soundEnabled) return;
+            play: (sound, volume = 0.7) => {
+                if (!this.audio[sound] || !this.soundEnabled) return;
                 try {
-                    this[sound].currentTime = 0;
-                    this[sound].volume = volume;
-                    this[sound].play();
+                    this.audio[sound].currentTime = 0;
+                    this.audio[sound].volume = volume;
+                    this.audio[sound].play();
                 } catch (e) {
                     console.log('🔇 خطأ في تشغيل الصوت:', e);
                 }
             },
             
-            playMusic: function() {
-                if (!this.background || !this.game.soundEnabled) return;
+            playMusic: () => {
+                if (!this.audio.background || !this.soundEnabled) return;
                 try {
-                    this.background.volume = 0.3;
-                    this.background.loop = true;
-                    this.background.play();
+                    this.audio.background.volume = 0.3;
+                    this.audio.background.loop = true;
+                    this.audio.background.play();
                 } catch (e) {
                     console.log('🔇 خطأ في تشغيل الموسيقى');
                 }
             },
             
-            stopMusic: function() {
-                if (!this.background) return;
-                this.background.pause();
-                this.background.currentTime = 0;
+            stopMusic: () => {
+                if (!this.audio.background) return;
+                this.audio.background.pause();
+                this.audio.background.currentTime = 0;
             }
         };
-        
-        this.audio.game = this;
         
         // تهيئة الألعاب المصغرة في الخلفية
         this.initBackgroundObjects();
         
-        // التهيئة
-        this.init();
+        // التهيئة بعد تحميل الصور
+        this.loadCharacterImages().then(() => {
+            this.init();
+        }).catch(error => {
+            console.error('❌ فشل تحميل الصور:', error);
+            this.init();
+        });
     }
     
     // ===== تعديل حجم الكانفاس ديناميكياً =====
     resizeCanvas() {
         const container = document.querySelector('.game-area');
+        if (!container) return;
+        
         const rect = container.getBoundingClientRect();
         
         this.canvas.width = Math.min(400, rect.width - 40);
@@ -223,8 +225,16 @@ class HelixJump {
     
     // ===== تحميل صور متعددة للشخصية =====
     loadCharacterImages() {
-        const imageNames = ['engineer.png', 'engineer2.png', 'engineer3.png'];
+        return new Promise((resolve) => {
+            const imageNames = ['engineer.png', 'engineer2.png', 'engineer3.png'];
         let loadedCount = 0;
+        const totalImages = imageNames.length;
+        
+        if (totalImages === 0) {
+            this.character.imageLoaded = true;
+            resolve();
+            return;
+        }
         
         imageNames.forEach((name, index) => {
             const img = new Image();
@@ -233,9 +243,10 @@ class HelixJump {
                 loadedCount++;
                 this.character.images[index] = img;
                 
-                if (loadedCount === imageNames.length) {
+                if (loadedCount === totalImages) {
                     this.character.imageLoaded = true;
                     console.log('✅ جميع صور الشخصية حمّلت بنجاح!');
+                    resolve();
                 }
             };
             
@@ -245,10 +256,12 @@ class HelixJump {
                 this.createFallbackImage(index);
                 loadedCount++;
                 
-                if (loadedCount === imageNames.length) {
+                if (loadedCount === totalImages) {
                     this.character.imageLoaded = true;
+                    resolve();
                 }
             };
+        });
         });
     }
     
@@ -309,15 +322,15 @@ class HelixJump {
     
     // ===== تحديث الإحصائيات =====
     updateStats() {
-        this.highScoreElement.textContent = this.highScore;
-        document.getElementById('totalCoins').textContent = this.totalCoins;
-        document.getElementById('totalJumps').textContent = this.totalJumps;
-        document.getElementById('gamesPlayed').textContent = this.gamesPlayed;
+        if (this.highScoreElement) this.highScoreElement.textContent = this.highScore;
+        if (document.getElementById('totalCoins')) document.getElementById('totalCoins').textContent = this.totalCoins;
+        if (document.getElementById('totalJumps')) document.getElementById('totalJumps').textContent = this.totalJumps;
+        if (document.getElementById('gamesPlayed')) document.getElementById('gamesPlayed').textContent = this.gamesPlayed;
         
         // حساب الدقة
         const accuracy = this.character.jumps > 0 ? 
             Math.round((this.character.successfulJumps / this.character.jumps) * 100) : 100;
-        this.accuracyElement.textContent = `${accuracy}%`;
+        if (this.accuracyElement) this.accuracyElement.textContent = `${accuracy}%`;
     }
     
     // ===== إنشاء كائنات الخلفية المتحركة =====
@@ -2012,17 +2025,40 @@ class HelixJump {
         });
         
         // الأزرار
-        this.restartButton.addEventListener('click', () => this.restartGame());
-        this.resumeButton.addEventListener('click', () => this.togglePause());
-        this.pauseButton.addEventListener('click', () => this.togglePause());
-        this.soundToggle.addEventListener('click', () => this.toggleSound());
-        this.shopButton.addEventListener('click', () => this.toggleShop());
-        this.statsButton.addEventListener('click', () => this.toggleStats());
-        this.buyShieldButton.addEventListener('click', () => this.buyPowerUp('shield'));
-        this.buyDoubleCoinsButton.addEventListener('click', () => this.buyPowerUp('doubleCoins'));
+        if (this.restartButton) this.restartButton.addEventListener('click', () => this.restartGame());
+        if (this.resumeButton) this.resumeButton.addEventListener('click', () => this.togglePause());
+        if (this.pauseButton) this.pauseButton.addEventListener('click', () => this.togglePause());
+        if (this.soundToggle) this.soundToggle.addEventListener('click', () => this.toggleSound());
+        if (this.shopButton) this.shopButton.addEventListener('click', () => this.toggleShop());
+        if (this.statsButton) this.statsButton.addEventListener('click', () => this.toggleStats());
+        if (this.buyShieldButton) this.buyShieldButton.addEventListener('click', () => this.buyPowerUp('shield'));
+        if (this.buyDoubleCoinsButton) this.buyDoubleCoinsButton.addEventListener('click', () => this.buyPowerUp('doubleCoins'));
         
-        this.difficultySelect.addEventListener('change', (e) => {
-            this.changeDifficulty(e.target.value);
+        if (this.difficultySelect) {
+            this.difficultySelect.addEventListener('change', (e) => {
+                this.changeDifficulty(e.target.value);
+            });
+        }
+        
+        // أزرار التحكم السريع
+        document.querySelectorAll('.action-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const action = e.currentTarget.getAttribute('data-action');
+                switch(action) {
+                    case 'jump':
+                        this.jump();
+                        break;
+                    case 'restart':
+                        this.restartGame();
+                        break;
+                    case 'pause':
+                        this.togglePause();
+                        break;
+                    case 'sound':
+                        this.toggleSound();
+                        break;
+                }
+            });
         });
         
         // منع سلوك اللمس الافتراضي
@@ -2078,22 +2114,22 @@ class HelixJump {
     }
     
     updateShop() {
-        document.getElementById('shopCoins').textContent = this.totalCoins;
-        document.getElementById('shieldPrice').textContent = '100';
-        document.getElementById('doubleCoinsPrice').textContent = '150';
+        if (document.getElementById('shopCoins')) document.getElementById('shopCoins').textContent = this.totalCoins;
+        if (document.getElementById('shieldPrice')) document.getElementById('shieldPrice').textContent = '100';
+        if (document.getElementById('doubleCoinsPrice')) document.getElementById('doubleCoinsPrice').textContent = '150';
     }
     
     updateStatsScreen() {
         const accuracy = this.character.jumps > 0 ? 
             Math.round((this.character.successfulJumps / this.character.jumps) * 100) : 100;
         
-        document.getElementById('statsGamesPlayed').textContent = this.gamesPlayed;
-        document.getElementById('statsTotalJumps').textContent = this.totalJumps;
-        document.getElementById('statsTotalCoins').textContent = this.totalCoins;
-        document.getElementById('statsHighScore').textContent = this.highScore;
-        document.getElementById('statsAccuracy').textContent = `${accuracy}%`;
-        document.getElementById('statsLongestCombo').textContent = this.character.longestCombo;
-        document.getElementById('statsPerfectJumps').textContent = this.character.perfectJumps;
+        if (document.getElementById('statsGamesPlayed')) document.getElementById('statsGamesPlayed').textContent = this.gamesPlayed;
+        if (document.getElementById('statsTotalJumps')) document.getElementById('statsTotalJumps').textContent = this.totalJumps;
+        if (document.getElementById('statsTotalCoins')) document.getElementById('statsTotalCoins').textContent = this.totalCoins;
+        if (document.getElementById('statsHighScore')) document.getElementById('statsHighScore').textContent = this.highScore;
+        if (document.getElementById('statsAccuracy')) document.getElementById('statsAccuracy').textContent = `${accuracy}%`;
+        if (document.getElementById('statsLongestCombo')) document.getElementById('statsLongestCombo').textContent = this.character.longestCombo;
+        if (document.getElementById('statsPerfectJumps')) document.getElementById('statsPerfectJumps').textContent = this.character.perfectJumps;
     }
     
     buyPowerUp(type) {
@@ -2224,11 +2260,21 @@ window.addEventListener('load', () => {
     setTimeout(() => {
         try {
             const game = new HelixJump();
+            window.game = game; // جعل اللعبة متاحة عالمياً
             console.log('🎮 HELIX JUMP 6.0 - الإصدار الخارق 🎮');
             console.log('✅ جميع التحسينات تم تطبيقها بنجاح!');
+            
+            // إخفاء شاشة التحميل
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen) {
+                loadingScreen.style.display = 'none';
+            }
         } catch (error) {
             console.error('❌ خطأ في تحميل اللعبة:', error);
             alert('حدث خطأ في تحميل اللعبة. يرجى تحديث الصفحة.');
         }
-    }, 100);
+    }, 500);
 });
+
+// جعل الفئة متاحة عالمياً
+window.HelixJump = HelixJump;
