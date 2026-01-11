@@ -1,349 +1,249 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Helix Jump 3D - القفز الحلزوني ثلاثي الأبعاد</title>
-    <meta name="description" content="لعبة Helix Jump ثلاثية الأبعاد مع تأثيرات واقعية">
-    <meta name="theme-color" content="#0D47A1">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helix Jump - الشخصية ثابتة</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0D47A1, #1976D2);
+            color: white;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 450px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header {
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            color: #FF4081;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .game-area {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            padding: 10px;
+            margin-bottom: 20px;
+            position: relative;
+            height: 500px;
+        }
+        
+        canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 15px;
+            display: block;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FFD600;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .control-btn {
+            background: linear-gradient(45deg, #FF4081, #FF9100);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .instructions h3 {
+            color: #FFD600;
+            margin-bottom: 10px;
+        }
+        
+        .instructions p {
+            margin-bottom: 5px;
+        }
+        
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0D47A1, #1976D2);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #FF4081;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 18px;
+            color: white;
+        }
+        
+        .warning {
+            background: rgba(255, 87, 34, 0.2);
+            border: 2px solid #FF5722;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+    </style>
 </head>
 <body>
     <!-- شاشة التحميل -->
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-spinner"></div>
-        <div class="loading-text">جاري تحميل اللعبة 3D...</div>
+        <div class="loading-text">جاري تحميل اللعبة...</div>
     </div>
 
     <!-- الحاوية الرئيسية -->
     <div class="container">
-        <!-- رأس اللعبة -->
-        <header class="game-header">
-            <div class="quick-controls">
-                <button id="pauseButton" class="control-btn" title="إيقاف مؤقت">
-                    <i class="fas fa-pause"></i>
-                </button>
-                <button id="soundToggle" class="control-btn" title="تشغيل/إيقاف الصوت">
-                    <i class="fas fa-volume-up"></i>
-                </button>
-            </div>
-            
-            <h1 class="game-title">
-                <i class="fas fa-cube"></i> HELIX JUMP 3D
-            </h1>
-            
-            <div class="quick-controls">
-                <button id="shopButton" class="control-btn" title="المتجر">
-                    <i class="fas fa-shopping-cart"></i>
-                </button>
-                <button id="statsButton" class="control-btn" title="الإحصائيات">
-                    <i class="fas fa-chart-line"></i>
-                </button>
-            </div>
-        </header>
+        <!-- العنوان -->
+        <div class="header">
+            <h1>🎮 Helix Jump</h1>
+            <p>الشخصية ثابتة - الأسطوانة تدور</p>
+        </div>
 
         <!-- الإحصائيات -->
-        <div class="game-stats">
-            <div class="stat">
-                <span class="stat-label">
-                    <i class="fas fa-star"></i> النقاط
-                </span>
-                <span id="score" class="stat-value">0</span>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">النقاط</div>
+                <div id="score" class="stat-value">0</div>
             </div>
-            <div class="stat">
-                <span class="stat-label">
-                    <i class="fas fa-layer-group"></i> المستوى
-                </span>
-                <span id="level" class="stat-value">1</span>
+            <div class="stat-item">
+                <div class="stat-label">المستوى</div>
+                <div id="level" class="stat-value">1</div>
             </div>
-            <div class="stat">
-                <span class="stat-label">
-                    <i class="fas fa-trophy"></i> الأعلى
-                </span>
-                <span id="highScore" class="stat-value">0</span>
-            </div>
-            <div class="stat">
-                <span class="stat-label">
-                    <i class="fas fa-coins"></i> العملات
-                </span>
-                <span id="totalCoins" class="stat-value">0</span>
+            <div class="stat-item">
+                <div class="stat-label">الأعلى</div>
+                <div id="highScore" class="stat-value">0</div>
             </div>
         </div>
 
-        <!-- منطقة اللعبة الرئيسية -->
-        <main class="game-area">
+        <!-- منطقة اللعبة -->
+        <div class="game-area">
             <canvas id="gameCanvas"></canvas>
-        </main>
+        </div>
 
-        <!-- التحكم السريع -->
-        <div class="action-buttons">
-            <button data-action="jump" class="action-btn">
-                <i class="fas fa-arrow-up"></i>
-                <span>نط</span>
+        <!-- التحكم -->
+        <div class="controls">
+            <button class="control-btn" data-action="jump">
+                <span style="font-size: 20px;">👆</span>
+                <span>نطة خفيفة</span>
             </button>
-            <button data-action="restart" class="action-btn">
-                <i class="fas fa-redo"></i>
+            <button class="control-btn" data-action="restart">
+                <span style="font-size: 20px;">🔄</span>
                 <span>إعادة</span>
             </button>
-            <button data-action="pause" class="action-btn">
-                <i class="fas fa-pause"></i>
-                <span>إيقاف</span>
-            </button>
-            <button data-action="sound" class="action-btn">
-                <i class="fas fa-volume-up"></i>
-                <span>صوت</span>
-            </button>
         </div>
 
-        <!-- إحصائيات إضافية -->
-        <div class="game-stats">
-            <div class="stat">
-                <span class="stat-label">
-                    <i class="fas fa-running"></i> النطات
-                </span>
-                <span id="jumpsCount" class="stat-value">0</span>
-            </div>
-            <div class="stat">
-                <span class="stat-label">
-                    <i class="fas fa-coins"></i> المجموعة
-                </span>
-                <span id="coinsCount" class="stat-value">0</span>
-            </div>
-            <div class="stat">
-                <span class="stat-label">
-                    <i class="fas fa-bullseye"></i> الدقة
-                </span>
-                <span id="accuracy" class="stat-value">100%</span>
-            </div>
-            <div class="stat">
-                <span class="stat-label">
-                    <i class="fas fa-fire"></i> الكومبو
-                </span>
-                <span id="combo" class="stat-value">x1</span>
+        <!-- التعليمات -->
+        <div class="instructions">
+            <h3>🎮 كيفية اللعب:</h3>
+            <p>✅ <strong>الشخصية ثابتة تماماً</strong> في المنتصف</p>
+            <p>🔄 <strong>اسحب</strong> لتدوير الأسطوانة</p>
+            <p>👆 <strong>انقر "نطة خفيفة"</strong> للقفز في المكان</p>
+            <p>💀 <strong>تجنب الفجوات</strong> عند دوران الأسطوانة</p>
+            <p>💰 <strong>اجمع العملات</strong> الصفراء</p>
+            
+            <div class="warning">
+                ⚠️ <strong>ملاحظة:</strong> الشخصية لا تنط عند لمس الشاشة!<br>
+                استخدم زر "نطة خفيفة" فقط للقفز.
             </div>
         </div>
-
-        <!-- اختيار الصعوبة -->
-        <div class="difficulty-selector">
-            <label class="difficulty-label">
-                <i class="fas fa-sliders-h"></i> مستوى الصعوبة
-            </label>
-            <select id="difficultySelect" class="difficulty-select">
-                <option value="EASY">سهل</option>
-                <option value="NORMAL" selected>عادي</option>
-                <option value="HARD">صعب</option>
-                <option value="EXTREME">متطرف</option>
-            </select>
-        </div>
-
-        <!-- تلميحات التحكم -->
-        <div class="controls-hint">
-            <div class="control-item">
-                <span class="control-icon">↻</span>
-                <span class="control-text">اسحب لتدوير الأسطوانة</span>
-            </div>
-            <div class="control-item">
-                <span class="control-icon">👆</span>
-                <span class="control-text">انقر/المس للنط</span>
-            </div>
-            <div class="control-item">
-                <span class="control-icon">🎯</span>
-                <span class="control-text">الشخصية ثابتة في المنتصف</span>
-            </div>
-        </div>
-
-        <!-- شاشة إيقاف مؤقت -->
-        <div id="pauseScreen" class="overlay-screen">
-            <div class="screen-content">
-                <h2 class="screen-title">
-                    <i class="fas fa-pause-circle"></i> اللعبة متوقفة
-                </h2>
-                
-                <div class="game-tips">
-                    <p><i class="fas fa-lightbulb"></i> الشخصية ثابتة والأسطوانة هي التي تدور!</p>
-                </div>
-                
-                <button id="resumeButton" class="resume-button">
-                    <i class="fas fa-play"></i> استئناف اللعب
-                </button>
-            </div>
-        </div>
-
-        <!-- شاشة نهاية اللعبة -->
-        <div id="gameOverScreen" class="overlay-screen">
-            <div class="screen-content">
-                <h2 class="screen-title">
-                    <i class="fas fa-gamepad"></i> GAME OVER
-                </h2>
-                
-                <div class="final-stats">
-                    <div class="final-stat">
-                        <span class="final-label">النقاط النهائية</span>
-                        <span id="finalScore" class="final-value">0</span>
-                    </div>
-                    <div class="final-stat">
-                        <span class="final-label">أعلى نتيجة</span>
-                        <span id="finalHighScore" class="final-value">0</span>
-                    </div>
-                    <div class="final-stat">
-                        <span class="final-label">المستوى</span>
-                        <span id="finalLevel" class="final-value">1</span>
-                    </div>
-                    <div class="final-stat">
-                        <span class="final-label">عدد النطات</span>
-                        <span id="finalJumps" class="final-value">0</span>
-                    </div>
-                    <div class="final-stat">
-                        <span class="final-label">العملات المجموعة</span>
-                        <span id="finalCoins" class="final-value">0</span>
-                    </div>
-                    <div class="final-stat">
-                        <span class="final-label">دقة النط</span>
-                        <span id="finalAccuracy" class="final-value">100%</span>
-                    </div>
-                </div>
-                
-                <button id="restartButton" class="restart-button">
-                    <i class="fas fa-redo"></i> إعادة اللعب
-                </button>
-                
-                <div class="game-tips">
-                    <p><i class="fas fa-lightbulb"></i> استخدم الأسطوانة ثلاثية الأبعاد للهروب من الفخاخ!</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- متجر اللعبة -->
-        <div id="shopScreen" class="overlay-screen">
-            <div class="screen-content">
-                <h2 class="screen-title">
-                    <i class="fas fa-shopping-cart"></i> متجر اللعبة
-                </h2>
-                
-                <div class="shop-coins">
-                    <p style="color: #ffd600; font-size: 20px; margin: 15px 0;">
-                        <i class="fas fa-coins"></i> رصيدك: <span id="shopCoins">0</span> عملة
-                    </p>
-                </div>
-                
-                <div class="shop-items">
-                    <div id="buyShield" class="shop-item">
-                        <span class="shop-item-icon">🛡️</span>
-                        <div class="shop-item-name">درع الحماية</div>
-                        <div class="shop-item-price">
-                            <i class="fas fa-coins"></i> <span id="shieldPrice">100</span>
-                        </div>
-                    </div>
-                    
-                    <div id="buyDoubleCoins" class="shop-item">
-                        <span class="shop-item-icon">2×</span>
-                        <div class="shop-item-name">عملات مزدوجة</div>
-                        <div class="shop-item-price">
-                            <i class="fas fa-coins"></i> <span id="doubleCoinsPrice">150</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="game-tips">
-                    <p><i class="fas fa-lightbulb"></i> استخدم الدرع للحماية من الفخاخ!</p>
-                </div>
-                
-                <button class="restart-button" style="background: linear-gradient(45deg, #2196F3, #03A9F4);" onclick="window.game && window.game.toggleShop()">
-                    <i class="fas fa-times"></i> إغلاق المتجر
-                </button>
-            </div>
-        </div>
-
-        <!-- إحصائيات متقدمة -->
-        <div id="statsScreen" class="overlay-screen">
-            <div class="screen-content">
-                <h2 class="screen-title">
-                    <i class="fas fa-chart-line"></i> إحصائيات اللاعب
-                </h2>
-                
-                <div class="advanced-stats">
-                    <div class="advanced-stat">
-                        <div class="advanced-stat-value" id="statsGamesPlayed">0</div>
-                        <div class="advanced-stat-label">مباريات لعبت</div>
-                    </div>
-                    <div class="advanced-stat">
-                        <div class="advanced-stat-value" id="statsTotalJumps">0</div>
-                        <div class="advanced-stat-label">إجمالي النطات</div>
-                    </div>
-                    <div class="advanced-stat">
-                        <div class="advanced-stat-value" id="statsTotalCoins">0</div>
-                        <div class="advanced-stat-label">العملات المجموعة</div>
-                    </div>
-                    <div class="advanced-stat">
-                        <div class="advanced-stat-value" id="statsHighScore">0</div>
-                        <div class="advanced-stat-label">أعلى نتيجة</div>
-                    </div>
-                    <div class="advanced-stat">
-                        <div class="advanced-stat-value" id="statsAccuracy">100%</div>
-                        <div class="advanced-stat-label">دقة النط</div>
-                    </div>
-                    <div class="advanced-stat">
-                        <div class="advanced-stat-value" id="statsLongestCombo">0</div>
-                        <div class="advanced-stat-label">أطول كومبو</div>
-                    </div>
-                    <div class="advanced-stat">
-                        <div class="advanced-stat-value" id="statsPerfectJumps">0</div>
-                        <div class="advanced-stat-label">نطات مثالية</div>
-                    </div>
-                    <div class="advanced-stat">
-                        <div class="advanced-stat-value" id="statsTrapsAvoided">0</div>
-                        <div class="advanced-stat-label">فخاخ تجنبت</div>
-                    </div>
-                </div>
-                
-                <button class="restart-button" style="background: linear-gradient(45deg, #9C27B0, #E91E63);" onclick="window.game && window.game.toggleStats()">
-                    <i class="fas fa-times"></i> إغلاق الإحصائيات
-                </button>
-            </div>
-        </div>
-
-        <!-- تذييل اللعبة -->
-        <footer class="game-footer">
-            <p class="footer-text">
-                <i class="fas fa-cube"></i> Helix Jump 3D - الإصدار 7.0
-            </p>
-            <p class="footer-note">
-                <i class="fas fa-code"></i> شخصية ثابتة + أسطوانة ثلاثية الأبعاد
-                <span style="margin: 0 10px;">•</span>
-                <i class="fas fa-mobile-alt"></i> يدعم اللمس والاهتزاز
-            </p>
-        </footer>
     </div>
 
-    <!-- الصوتيات -->
-    <audio id="jumpSound" preload="auto">
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-player-jumping-in-a-video-game-2043.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="coinSound" preload="auto">
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-coin-win-notification-1998.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="gameOverSound" preload="auto">
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-retro-game-over-1947.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="powerUpSound" preload="auto">
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="shieldSound" preload="auto">
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-magic-sparkles-3007.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="trapSound" preload="auto">
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-explosion-hit-2994.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="backgroundMusic" preload="auto">
-        <source src="https://assets.mixkit.co/music/preview/mixkit-game-level-music-689.mp3" type="audio/mpeg">
-    </audio>
-
-    <!-- ملف اللعبة الرئيسي -->
+    <!-- ملف اللعبة -->
     <script src="game.js"></script>
+    
+    <script>
+        // إخفاء شاشة التحميل بعد ثانيتين
+        setTimeout(() => {
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen) {
+                loadingScreen.style.display = 'none';
+            }
+        }, 2000);
+    </script>
 </body>
 </html>
