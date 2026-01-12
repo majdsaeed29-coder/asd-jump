@@ -1,21 +1,19 @@
-// ===== إعدادات اللعبة الجديدة =====
+// ===== إعدادات اللعبة البسيطة =====
 const GameConfig = {
-    VERSION: "2.0 - الطابة الناطحة",
+    VERSION: "1.0 - النسخة المستقرة",
     
     // إعدادات المنصة
-    PLATFORM_SPACING: 110,
-    PLATFORM_HEIGHT: 20,
-    GAP_WIDTH_MIN: 45,
-    GAP_WIDTH_MAX: 70,
+    PLATFORM_SPACING: 120,
+    PLATFORM_HEIGHT: 25,
+    GAP_WIDTH_MIN: 40,
+    GAP_WIDTH_MAX: 60,
     
-    // إعدادات الطابة
-    BALL: {
-        SIZE: 35,
-        JUMP_FORCE: -14,
-        GRAVITY: 0.7,
-        BOUNCE_FACTOR: 0.8,
-        AUTO_JUMP_DELAY: 100, // تأخير 100ms بين النطات التلقائية
-        COLORS: ['#FF4081', '#2196F3', '#4CAF50', '#FF9800', '#9C27B0']
+    // إعدادات الشخصية
+    CHARACTER: {
+        SIZE: 50,
+        JUMP_FORCE: -15,
+        GRAVITY: 0.8,
+        MOVE_SPEED: 5
     },
     
     // الألوان
@@ -25,42 +23,29 @@ const GameConfig = {
         PLATFORM_EDGE: '#2E7D32',
         COIN: '#FFD700',
         BACKGROUND: ['#0D47A1', '#1976D2'],
-        HELIX: 'rgba(33, 150, 243, 0.7)',
-        BALL_SHADOW: 'rgba(0, 0, 0, 0.3)'
+        CHARACTER: '#FF4081',
+        HELIX: 'rgba(33, 150, 243, 0.6)'
     },
     
     // الصعوبة
     DIFFICULTY: {
-        EASY: { 
-            SPEED: 1.3, 
-            GAP_CHANCE: 0.15,
-            AUTO_JUMP: true
-        },
-        NORMAL: { 
-            SPEED: 1.8, 
-            GAP_CHANCE: 0.25,
-            AUTO_JUMP: true
-        },
-        HARD: { 
-            SPEED: 2.3, 
-            GAP_CHANCE: 0.35,
-            AUTO_JUMP: true
-        }
+        EASY: { SPEED: 1.5, GAP_CHANCE: 0.2 },
+        NORMAL: { SPEED: 2.0, GAP_CHANCE: 0.3 },
+        HARD: { SPEED: 2.5, GAP_CHANCE: 0.4 }
     },
     
     // الأسطوانة
     HELIX: {
-        RADIUS: 170,
-        COLUMNS: 10,
-        PLATFORM_WIDTH: 110,
-        ROTATION_SPEED: 0.02
+        RADIUS: 180,
+        COLUMNS: 8,
+        PLATFORM_WIDTH: 120
     }
 };
 
-// ===== فئة اللعبة - الطابة الناطحة =====
-class BallHelixGame {
+// ===== فئة اللعبة - النسخة المصححة =====
+class HelixGame {
     constructor() {
-        console.log('🎮 بدء لعبة الطابة الناطحة...');
+        console.log('🎮 بدء اللعبة...');
         
         try {
             this.initGame();
@@ -85,19 +70,17 @@ class BallHelixGame {
         this.gameActive = false;
         this.score = 0;
         this.highScore = parseInt(localStorage.getItem('helixHighScore')) || 0;
+        this.jumps = 3;
         this.level = 1;
-        this.combo = 0;
-        this.lastJumpTime = 0;
         
         // الحصول على الصعوبة
         const difficultySelect = document.getElementById('difficultySelect');
         this.difficulty = difficultySelect ? difficultySelect.value : 'EASY';
         this.gameSpeed = GameConfig.DIFFICULTY[this.difficulty].SPEED;
         this.gapChance = GameConfig.DIFFICULTY[this.difficulty].GAP_CHANCE;
-        this.autoJump = GameConfig.DIFFICULTY[this.difficulty].AUTO_JUMP;
         
-        // تهيئة الطابة
-        this.initBall();
+        // تهيئة الشخصية
+        this.initCharacter();
         
         // تهيئة المنصات
         this.platforms = [];
@@ -109,11 +92,6 @@ class BallHelixGame {
         this.rotationSpeed = 0;
         this.isDragging = false;
         this.lastMouseX = 0;
-        this.dragSensitivity = 0.03;
-        
-        // التوقيت
-        this.time = 0;
-        this.lastAutoJump = 0;
         
         // الأحداث
         this.initEventListeners();
@@ -122,23 +100,18 @@ class BallHelixGame {
         this.updateUI();
     }
     
-    // ===== تهيئة الطابة =====
-    initBall() {
-        const colorIndex = Math.floor(Math.random() * GameConfig.BALL.COLORS.length);
-        
-        this.ball = {
+    // ===== تهيئة الشخصية =====
+    initCharacter() {
+        this.character = {
             x: 0, // سيتم ضبطه بعد resizeCanvas
             y: 0, // سيتم ضبطه بعد إنشاء المنصات
-            size: GameConfig.BALL.SIZE,
-            color: GameConfig.BALL.COLORS[colorIndex],
+            size: GameConfig.CHARACTER.SIZE,
+            color: GameConfig.COLORS.CHARACTER,
             velocityY: 0,
             isJumping: false,
             isOnPlatform: true,
             currentPlatform: null,
-            rotation: 0,
-            scale: 1,
-            shadowSize: 0,
-            trail: []
+            rotation: 0
         };
     }
     
@@ -151,9 +124,9 @@ class BallHelixGame {
         this.canvas.width = rect.width;
         this.canvas.height = rect.height;
         
-        // ضبط موقع الطابة في المنتصف
-        if (this.ball) {
-            this.ball.x = this.canvas.width / 2;
+        // ضبط موقع الشخصية في المنتصف
+        if (this.character) {
+            this.character.x = this.canvas.width / 2;
         }
     }
     
@@ -162,16 +135,15 @@ class BallHelixGame {
         this.platforms = [];
         this.coins = [];
         
-        const platformCount = 30;
-        const startY = 150;
+        const platformCount = 25;
         
         for (let i = 0; i < platformCount; i++) {
-            const y = startY + i * GameConfig.PLATFORM_SPACING;
+            const y = 100 + i * GameConfig.PLATFORM_SPACING;
             const column = i % GameConfig.HELIX.COLUMNS;
             const angle = (column * Math.PI * 2) / GameConfig.HELIX.COLUMNS;
             
-            // المنصات الـ 8 الأولى بدون فجوات للتسهيل
-            const hasGap = i > 7 && Math.random() < this.gapChance;
+            // المنصات الـ 5 الأولى بدون فجوات للتسهيل
+            const hasGap = i > 4 && Math.random() < this.gapChance;
             const gapWidth = hasGap ? 
                 GameConfig.GAP_WIDTH_MIN + Math.random() * (GameConfig.GAP_WIDTH_MAX - GameConfig.GAP_WIDTH_MIN) : 
                 0;
@@ -191,61 +163,44 @@ class BallHelixGame {
                 gapPos: gapPos,
                 gapWidth: gapWidth,
                 isActive: true,
-                isPassed: false,
-                bounce: 0
+                isPassed: false
             };
             
             this.platforms.push(platform);
             
-            // إضافة عملات (40% فرصة)
-            if (i > 5 && Math.random() < 0.4 && !hasGap) {
+            // إضافة عملات (30% فرصة)
+            if (i > 2 && Math.random() < 0.3 && !hasGap) {
                 this.coins.push({
                     platformId: i,
-                    angle: angle + (Math.random() * 0.3 - 0.15),
+                    angle: angle,
                     collected: false,
                     value: 10,
-                    rotation: 0,
-                    floatOffset: Math.random() * Math.PI * 2
+                    y: y - 40
                 });
             }
         }
         
-        // ضبط الطابة على المنصة الأولى
+        // ضبط الشخصية على المنصة الأولى
         if (this.platforms.length > 0) {
-            const firstPlatform = this.platforms[0];
-            this.ball.currentPlatform = firstPlatform;
-            this.ball.y = firstPlatform.y - GameConfig.BALL.SIZE - 5;
-            this.ball.x = this.canvas.width / 2;
-            this.ball.isOnPlatform = true;
-            this.ball.velocityY = 0;
-            
-            // إزالة الفجوة من المنصة الأولى
-            firstPlatform.hasGap = false;
-            firstPlatform.gapWidth = 0;
-            
-            console.log(`✅ الطابة على المنصة #0 (y=${Math.round(this.ball.y)})`);
+            this.character.currentPlatform = this.platforms[0];
+            this.character.y = this.platforms[0].y - 60;
+            this.character.x = this.canvas.width / 2;
+            this.character.isOnPlatform = true;
+            this.character.velocityY = 0;
         }
         
         console.log(`✅ تم إنشاء ${platformCount} منصة`);
     }
     
-    // ===== الأحداث - تدوير فقط (بدون نط) =====
+    // ===== الأحداث =====
     initEventListeners() {
-        // إزالة جميع الأحداث القديمة
-        this.canvas.removeEventListener('mousedown', this.startDrag);
-        this.canvas.removeEventListener('mousemove', this.drag);
-        this.canvas.removeEventListener('mouseup', this.endDrag);
-        this.canvas.removeEventListener('touchstart', this.touchStart);
-        this.canvas.removeEventListener('touchmove', this.touchMove);
-        this.canvas.removeEventListener('touchend', this.touchEnd);
-        
         // السحب لتدوير الأسطوانة
         this.canvas.addEventListener('mousedown', (e) => this.startDrag(e));
         this.canvas.addEventListener('mousemove', (e) => this.drag(e));
         this.canvas.addEventListener('mouseup', () => this.endDrag());
         this.canvas.addEventListener('mouseleave', () => this.endDrag());
         
-        // اللمس لتدوير الأسطوانة
+        // اللمس
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             this.startDrag(e.touches[0]);
@@ -256,24 +211,25 @@ class BallHelixGame {
         });
         this.canvas.addEventListener('touchend', () => this.endDrag());
         
-        // إزالة أزرار النط من الواجهة وإخفائها
-        const jumpBtn = document.getElementById('jumpBtn');
-        if (jumpBtn) {
-            jumpBtn.style.display = 'none';
-            jumpBtn.removeEventListener('click', this.jump);
-        }
+        // النط
+        document.addEventListener('keydown', (e) => {
+            if (!this.gameActive) return;
+            
+            if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') {
+                e.preventDefault();
+                this.jump();
+            }
+            
+            if (e.key === 'r' || e.key === 'R') {
+                this.restartGame();
+            }
+        });
         
-        // إزالة حدث النط من لوحة المفاتيح
-        document.removeEventListener('keydown', this.keyDownHandler);
-        
-        // إعادة التشغيل فقط
+        // أزرار التحكم
+        document.getElementById('jumpBtn').addEventListener('click', () => this.jump());
+        document.getElementById('leftBtn').addEventListener('click', () => this.rotationSpeed = -0.03);
+        document.getElementById('rightBtn').addEventListener('click', () => this.rotationSpeed = 0.03);
         document.getElementById('restartBtn').addEventListener('click', () => this.restartGame());
-        
-        // أزرار الدوران
-        document.getElementById('leftBtn').addEventListener('click', () => this.rotationSpeed = -0.04);
-        document.getElementById('rightBtn').addEventListener('click', () => this.rotationSpeed = 0.04);
-        
-        console.log('✅ تم إعداد الأحداث: تدوير فقط، بدون نط يدوي');
     }
     
     startDrag(e) {
@@ -288,28 +244,28 @@ class BallHelixGame {
         const currentX = e.clientX || e.pageX;
         const deltaX = currentX - this.lastMouseX;
         
-        // تطبيق سرعة الدوران مع حساسية
-        this.rotationSpeed = deltaX * this.dragSensitivity;
+        // تطبيق سرعة الدوران
+        this.rotationSpeed = deltaX * 0.02;
         this.lastMouseX = currentX;
     }
     
     endDrag() {
         this.isDragging = false;
+        // تخفيف السرعة تدريجياً
+        this.rotationSpeed *= 0.9;
     }
     
     // ===== تحديث اللعبة =====
     update(deltaTime) {
         if (!this.gameActive) return;
         
-        this.time += deltaTime / 1000;
-        
-        // تحديث دوران الأسطوانة
+        // تحديث الدوران
         this.updateRotation();
         
-        // تحديث الطابة (النط التلقائي)
-        this.updateBall(deltaTime);
+        // تحديث الشخصية
+        this.updateCharacter(deltaTime);
         
-        // تحريك المنصات
+        // تحديث المنصات
         this.updatePlatforms(deltaTime);
         
         // التحقق من الاصطدامات
@@ -317,61 +273,32 @@ class BallHelixGame {
         
         // تحديث الجسيمات
         this.updateParticles(deltaTime);
-        
-        // تحديث الأثر
-        this.updateTrail();
-        
-        // تحديث المنصات (تأثيرات)
-        this.updatePlatformEffects(deltaTime);
-        
-        // تحديث العملات
-        this.updateCoins(deltaTime);
     }
     
     updateRotation() {
-        // تطبيق الدوران
         this.helixRotation += this.rotationSpeed;
         
         // الحفاظ على النطاق
         if (this.helixRotation > Math.PI * 2) this.helixRotation -= Math.PI * 2;
         if (this.helixRotation < 0) this.helixRotation += Math.PI * 2;
         
-        // تخفيف السرعة تدريجياً
-        this.rotationSpeed *= 0.92;
+        // تخفيف السرعة
+        this.rotationSpeed *= 0.95;
     }
     
-    updateBall(deltaTime) {
+    updateCharacter(deltaTime) {
         // تطبيق الجاذبية
-        this.ball.velocityY += GameConfig.BALL.GRAVITY;
-        this.ball.y += this.ball.velocityY;
+        this.character.velocityY += GameConfig.CHARACTER.GRAVITY;
+        this.character.y += this.character.velocityY;
         
-        // تحديث دوران الطابة
-        this.ball.rotation += 0.1;
-        
-        // تأثير القفز
-        if (this.ball.velocityY < 0) {
-            this.ball.scale = 1 + Math.abs(this.ball.velocityY) / 50;
-        } else {
-            this.ball.scale = 1;
-        }
-        
-        // تحديل حجم الظل
-        this.ball.shadowSize = Math.max(0, this.ball.velocityY * 0.5);
+        // تحديث الدوران
+        this.character.rotation += 0.1;
         
         // البحث عن المنصة الحالية
         this.findCurrentPlatform();
         
-        // النط التلقائي عندما تكون الطابة على منصة
-        if (this.autoJump && this.ball.isOnPlatform) {
-            const now = Date.now();
-            if (now - this.lastAutoJump > GameConfig.BALL.AUTO_JUMP_DELAY) {
-                this.performAutoJump();
-                this.lastAutoJump = now;
-            }
-        }
-        
         // التحقق من السقوط خارج الشاشة
-        if (this.ball.y > this.canvas.height + 100) {
+        if (this.character.y > this.canvas.height + 100) {
             this.endGame();
         }
     }
@@ -384,24 +311,24 @@ class BallHelixGame {
         for (const platform of this.platforms) {
             if (!platform.isActive) continue;
             
-            // المسافة العمودية بين الطابة والمنصة
-            const verticalDistance = platform.y - this.ball.y;
+            // المسافة العمودية
+            const verticalDistance = platform.y - this.character.y;
             
-            // إذا كانت الطابة فوق المنصة مباشرة (بهامش ±15 بكسل)
-            if (verticalDistance >= -15 && verticalDistance < 80) {
+            // إذا كانت الشخصية قريبة من المنصة (فوقها أو تحتها قليلاً)
+            if (verticalDistance >= -20 && verticalDistance < 100) {
                 // حساب موقع المنصة على الشاشة
                 const platformAngle = platform.angle + this.helixRotation;
                 const platformX = centerX + Math.cos(platformAngle) * GameConfig.HELIX.RADIUS;
                 
                 // المسافة الأفقية
-                const horizontalDistance = Math.abs(this.ball.x - platformX);
+                const horizontalDistance = Math.abs(this.character.x - platformX);
                 
-                // إذا كانت داخل عرض المنصة (بهامش إضافي)
-                if (horizontalDistance < (platform.width / 2) + 15) {
+                // إذا كانت داخل عرض المنصة
+                if (horizontalDistance < platform.width / 2 + 10) {
                     // التحقق من الفجوة
-                    if (!this.isBallOverGap(platform, platformX)) {
-                        if (Math.abs(verticalDistance) < minDistance) {
-                            minDistance = Math.abs(verticalDistance);
+                    if (!this.isOverGap(platform, platformX)) {
+                        if (verticalDistance < minDistance && verticalDistance >= -10) {
+                            minDistance = verticalDistance;
                             closestPlatform = platform;
                         }
                     }
@@ -411,56 +338,36 @@ class BallHelixGame {
         
         if (closestPlatform) {
             // الهبوط على المنصة
-            if (this.ball.velocityY > 0 && !this.ball.isOnPlatform) {
+            if (this.character.velocityY > 0 && !this.character.isOnPlatform) {
                 // ضبط الارتفاع فوق المنصة
-                this.ball.y = closestPlatform.y - GameConfig.BALL.SIZE - 5;
-                this.ball.velocityY = 0;
-                this.ball.isOnPlatform = true;
-                
-                // تأثير ارتداد المنصة
-                closestPlatform.bounce = 1;
+                this.character.y = closestPlatform.y - 60;
+                this.character.velocityY = 0;
+                this.character.isOnPlatform = true;
                 
                 // حدث عبور المنصة
-                if (this.ball.currentPlatform !== closestPlatform) {
+                if (this.character.currentPlatform !== closestPlatform) {
                     this.onPlatformPassed(closestPlatform);
                 }
-                
-                // جسيمات الهبوط
-                this.createLandingParticles(closestPlatform);
             }
             
-            this.ball.currentPlatform = closestPlatform;
-            this.ball.isOnPlatform = true;
+            this.character.currentPlatform = closestPlatform;
+            this.character.isOnPlatform = true;
         } else {
-            // الطابة ليست على منصة
-            this.ball.isOnPlatform = false;
-            this.ball.currentPlatform = null;
+            // الشخصية ليست على منصة
+            this.character.isOnPlatform = false;
+            this.character.currentPlatform = null;
         }
     }
     
-    isBallOverGap(platform, platformX) {
+    isOverGap(platform, platformX) {
         if (!platform.hasGap) return false;
         
         // حساب موقع الفجوة على الشاشة
         const gapStart = platformX - (platform.width / 2) + platform.gapPos;
         const gapEnd = gapStart + platform.gapWidth;
         
-        // إذا كانت الطابة فوق الفجوة
-        return this.ball.x >= gapStart && this.ball.x <= gapEnd;
-    }
-    
-    performAutoJump() {
-        if (!this.ball.isOnPlatform) return;
-        
-        // النط التلقائي
-        this.ball.velocityY = GameConfig.BALL.JUMP_FORCE;
-        this.ball.isOnPlatform = false;
-        
-        // جسيمات النط
-        this.createJumpParticles();
-        
-        // إضافة أثر
-        this.addTrailPoint();
+        // إذا كانت الشخصية فوق الفجوة
+        return this.character.x >= gapStart && this.character.x <= gapEnd;
     }
     
     updatePlatforms(deltaTime) {
@@ -475,23 +382,13 @@ class BallHelixGame {
                 this.recyclePlatform(platform);
             }
         });
-    }
-    
-    updatePlatformEffects(deltaTime) {
-        // تحديث تأثير الارتداد للمنصات
-        this.platforms.forEach(platform => {
-            if (platform.bounce > 0) {
-                platform.bounce -= 0.1;
-                if (platform.bounce < 0) platform.bounce = 0;
-            }
-        });
-    }
-    
-    updateCoins(deltaTime) {
-        // تحديث دوران العملات وتأثير الطفو
+        
+        // تحديث موقع العملات
         this.coins.forEach(coin => {
-            coin.rotation += 0.03;
-            coin.floatOffset += 0.05;
+            const platform = this.platforms.find(p => p.id === coin.platformId);
+            if (platform) {
+                coin.y = platform.y - 40;
+            }
         });
     }
     
@@ -500,7 +397,6 @@ class BallHelixGame {
         const lowestY = Math.min(...this.platforms.map(p => p.y));
         platform.y = lowestY + GameConfig.PLATFORM_SPACING;
         platform.isPassed = false;
-        platform.bounce = 0;
         
         // إعادة تعيين الفجوة
         platform.hasGap = Math.random() < this.gapChance;
@@ -526,15 +422,14 @@ class BallHelixGame {
         // إزالة العملات القديمة
         this.coins = this.coins.filter(c => c.platformId !== platform.id);
         
-        // إضافة عملة جديدة (50% فرصة إذا لم يكن هناك فجوة)
-        if (!platform.hasGap && Math.random() < 0.5) {
+        // إضافة عملة جديدة (40% فرصة إذا لم يكن هناك فجوة)
+        if (!platform.hasGap && Math.random() < 0.4) {
             this.coins.push({
                 platformId: platform.id,
-                angle: platform.angle + (Math.random() * 0.3 - 0.15),
+                angle: platform.angle,
                 collected: false,
                 value: 10,
-                rotation: 0,
-                floatOffset: Math.random() * Math.PI * 2
+                y: platform.y - 40
             });
         }
     }
@@ -543,13 +438,13 @@ class BallHelixGame {
         // التحقق من العملات
         this.checkCoinCollision();
         
-        // التحقق من الفجوات (فقط إذا كانت الطابة على منصة)
-        if (this.ball.isOnPlatform && this.ball.currentPlatform) {
+        // التحقق من الفجوات (فقط إذا كانت الشخصية على منصة)
+        if (this.character.isOnPlatform && this.character.currentPlatform) {
             const centerX = this.canvas.width / 2;
-            const platform = this.ball.currentPlatform;
+            const platform = this.character.currentPlatform;
             const platformX = centerX + Math.cos(platform.angle + this.helixRotation) * GameConfig.HELIX.RADIUS;
             
-            if (platform.hasGap && this.isBallOverGap(platform, platformX)) {
+            if (platform.hasGap && this.isOverGap(platform, platformX)) {
                 this.fallIntoGap();
             }
         }
@@ -561,109 +456,83 @@ class BallHelixGame {
         for (const coin of this.coins) {
             if (coin.collected) continue;
             
-            const platform = this.platforms.find(p => p.id === coin.platformId);
-            if (!platform) continue;
-            
-            // موقع العملة على الشاشة مع تأثير الطفو
-            const floatY = Math.sin(coin.floatOffset) * 5;
+            // موقع العملة على الشاشة
             const coinX = centerX + Math.cos(coin.angle + this.helixRotation) * (GameConfig.HELIX.RADIUS + 25);
-            const coinY = platform.y - 30 + floatY;
+            const coinY = coin.y;
             
-            // حساب المسافة إلى الطابة
-            const dx = this.ball.x - coinX;
-            const dy = this.ball.y - coinY;
+            // حساب المسافة إلى الشخصية
+            const dx = this.character.x - coinX;
+            const dy = this.character.y - coinY;
             const distance = Math.sqrt(dx * dx + dy * dy);
             
-            // إذا كانت المسافة أقل من نصف حجم الطابة + نصف حجم العملة
-            if (distance < (this.ball.size / 2) + 12) {
+            // إذا كانت المسافة أقل من نصف حجم الشخصية + نصف حجم العملة
+            if (distance < (this.character.size / 2) + 15) {
                 this.collectCoin(coin);
             }
         }
     }
     
-    // ===== النظام البصري =====
-    updateTrail() {
-        // إضافة نقطة أثر جديدة
-        this.ball.trail.push({
-            x: this.ball.x,
-            y: this.ball.y,
-            size: this.ball.size * 0.7,
-            alpha: 0.6,
-            color: this.ball.color
-        });
+    // ===== الأحداث =====
+    jump() {
+        if (!this.gameActive) return;
+        if (this.jumps <= 0) return;
+        if (!this.character.isOnPlatform) return;
         
-        // تحديث وتقليل الشفافية
-        for (let i = this.ball.trail.length - 1; i >= 0; i--) {
-            this.ball.trail[i].alpha -= 0.05;
-            this.ball.trail[i].size *= 0.95;
-            
-            if (this.ball.trail[i].alpha <= 0 || this.ball.trail[i].size < 2) {
-                this.ball.trail.splice(i, 1);
-            }
+        this.character.velocityY = GameConfig.CHARACTER.JUMP_FORCE;
+        this.character.isOnPlatform = false;
+        this.jumps--;
+        this.updateJumpsUI();
+        
+        // جسيمات النط
+        this.createParticles(this.character.x, this.character.y, 8, '#FF4081');
+        
+        console.log('🦘 نطة! النطات المتبقية:', this.jumps);
+    }
+    
+    onPlatformPassed(platform) {
+        if (platform.isPassed) return;
+        
+        platform.isPassed = true;
+        this.addScore(10);
+        
+        // تجديد نطة كل 5 منصات
+        if (this.score % 50 === 0 && this.jumps < 3) {
+            this.jumps++;
+            this.updateJumpsUI();
+            console.log('✨ تم تجديد نطة!');
         }
         
-        // الحفاظ على عدد معقول من النقاط
-        if (this.ball.trail.length > 15) {
-            this.ball.trail.shift();
+        // زيادة المستوى كل 100 نقطة
+        const newLevel = Math.floor(this.score / 100) + 1;
+        if (newLevel > this.level) {
+            this.level = newLevel;
+            this.gameSpeed += 0.1;
+            console.log(`🎉 المستوى ${this.level}! السرعة: ${this.gameSpeed.toFixed(1)}`);
         }
     }
     
-    addTrailPoint() {
-        this.ball.trail.push({
-            x: this.ball.x,
-            y: this.ball.y,
-            size: this.ball.size * 0.8,
-            alpha: 0.8,
-            color: this.ball.color
-        });
+    collectCoin(coin) {
+        coin.collected = true;
+        this.addScore(coin.value);
+        this.createParticles(this.character.x, this.character.y, 12, '#FFD700');
+        console.log('💰 جمع عملة! +' + coin.value + ' نقطة');
     }
     
-    createJumpParticles() {
-        const count = 8;
-        for (let i = 0; i < count; i++) {
-            const angle = (i / count) * Math.PI * 2;
-            const speed = 2 + Math.random() * 3;
-            
-            this.particles.push({
-                x: this.ball.x,
-                y: this.ball.y,
-                vx: Math.cos(angle) * speed,
-                vy: Math.sin(angle) * speed - 2,
-                size: 3 + Math.random() * 4,
-                color: this.ball.color,
-                life: 1,
-                decay: 0.03 + Math.random() * 0.02
-            });
-        }
+    fallIntoGap() {
+        console.log('💀 سقوط في فجوة!');
+        this.createParticles(this.character.x, this.character.y, 20, '#FF5252');
+        this.endGame();
     }
     
-    createLandingParticles(platform) {
-        const centerX = this.canvas.width / 2;
-        const platformX = centerX + Math.cos(platform.angle + this.helixRotation) * GameConfig.HELIX.RADIUS;
-        
-        const count = 6;
-        for (let i = 0; i < count; i++) {
-            this.particles.push({
-                x: platformX,
-                y: platform.y,
-                vx: (Math.random() - 0.5) * 4,
-                vy: -Math.random() * 3 - 1,
-                size: 2 + Math.random() * 3,
-                color: platform.color,
-                life: 1,
-                decay: 0.02 + Math.random() * 0.02
-            });
-        }
-    }
-    
-    createParticles(x, y, count, color, size = 4) {
+    // ===== نظام الجسيمات =====
+    createParticles(x, y, count, color) {
         for (let i = 0; i < count; i++) {
             this.particles.push({
                 x: x,
                 y: y,
-                vx: (Math.random() - 0.5) * 6,
-                vy: (Math.random() - 0.5) * 6 - 2,
-                size: size,
+                vx: (Math.random() - 0.5) * 8,
+                vy: (Math.random() - 0.5) * 8 - 2,
+                size: 3 + Math.random() * 4,
                 color: color,
                 life: 1,
                 decay: 0.02 + Math.random() * 0.02
@@ -690,66 +559,6 @@ class BallHelixGame {
         }
     }
     
-    // ===== الأحداث =====
-    onPlatformPassed(platform) {
-        if (platform.isPassed) return;
-        
-        platform.isPassed = true;
-        
-        // إضافة النقاط مع مكافأة الكومبو
-        const points = 10 + (this.combo * 2);
-        this.addScore(points);
-        this.combo++;
-        
-        // عرض الكومبو
-        if (this.combo > 1) {
-            this.showCombo(this.combo);
-        }
-        
-        // زيادة السرعة تدريجياً
-        if (this.score % 100 === 0) {
-            this.gameSpeed += 0.1;
-            console.log(`⚡ زيادة السرعة إلى: ${this.gameSpeed.toFixed(1)}`);
-        }
-        
-        // زيادة المستوى
-        const newLevel = Math.floor(this.score / 200) + 1;
-        if (newLevel > this.level) {
-            this.level = newLevel;
-            console.log(`🎉 المستوى ${this.level}!`);
-        }
-    }
-    
-    collectCoin(coin) {
-        coin.collected = true;
-        
-        // إضافة النقاط مع مكافأة الكومبو
-        const points = coin.value + (this.combo * 3);
-        this.addScore(points);
-        
-        // جسيمات العملة
-        this.createParticles(this.ball.x, this.ball.y, 15, GameConfig.COLORS.COIN, 5);
-        
-        console.log('💰 جمع عملة! +' + points + ' نقطة');
-    }
-    
-    fallIntoGap() {
-        console.log('💀 سقوط في فجوة!');
-        
-        // جسيمات السقوط
-        this.createParticles(this.ball.x, this.ball.y, 25, GameConfig.COLORS.PLATFORM_GAP, 6);
-        
-        // إعادة تعيين الكومبو
-        this.combo = 0;
-        
-        this.endGame();
-    }
-    
-    showCombo(count) {
-        // يمكن إضافة عرض مرئي للكومبو هنا
-        console.log(`🔥 كومبو x${count}!`);
-    }
-    
     // ===== الرسم =====
     draw() {
         if (!this.ctx || !this.gameActive) return;
@@ -763,9 +572,6 @@ class BallHelixGame {
         // رسم الأسطوانة
         this.drawHelix();
         
-        // رسم أثر الطابة
-        this.drawTrail();
-        
         // رسم المنصات
         this.drawPlatforms();
         
@@ -775,8 +581,8 @@ class BallHelixGame {
         // رسم الجسيمات
         this.drawParticles();
         
-        // رسم الطابة
-        this.drawBall();
+        // رسم الشخصية
+        this.drawCharacter();
         
         // رسم معلومات التصحيح (اختياري)
         if (window.showDebug) {
@@ -785,7 +591,6 @@ class BallHelixGame {
     }
     
     drawBackground() {
-        // خلفية متدرجة
         const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
         gradient.addColorStop(0, GameConfig.COLORS.BACKGROUND[0]);
         gradient.addColorStop(1, GameConfig.COLORS.BACKGROUND[1]);
@@ -793,12 +598,12 @@ class BallHelixGame {
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // نجوم خلفية متحركة
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-        for (let i = 0; i < 25; i++) {
-            const x = (i * 53) % this.canvas.width;
-            const y = (i * 37 + this.time * 20) % this.canvas.height;
-            const size = (Math.sin(this.time * 2 + i) + 1) * 0.5 + 1;
+        // نجوم خلفية
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        for (let i = 0; i < 20; i++) {
+            const x = (i * 47) % this.canvas.width;
+            const y = (i * 31) % this.canvas.height;
+            const size = (Math.sin(Date.now() / 1000 + i) + 1) * 0.5 + 1;
             
             this.ctx.beginPath();
             this.ctx.arc(x, y, size, 0, Math.PI * 2);
@@ -813,55 +618,33 @@ class BallHelixGame {
         const columns = GameConfig.HELIX.COLUMNS;
         
         // العمود المركزي
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-        this.ctx.fillRect(centerX - 4, 0, 8, this.canvas.height);
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        this.ctx.fillRect(centerX - 3, 0, 6, this.canvas.height);
         
-        // الخطوط الحلزونية مع تدرج
+        // الخطوط الحلزونية
         for (let i = 0; i < columns; i++) {
             const angle = (i * Math.PI * 2) / columns + this.helixRotation;
-            const x1 = centerX + Math.cos(angle) * 20;
+            const x1 = centerX + Math.cos(angle) * 15;
             const x2 = centerX + Math.cos(angle) * radius;
             
             const gradient = this.ctx.createLinearGradient(x1, 0, x2, this.canvas.height);
-            gradient.addColorStop(0, `rgba(33, 150, 243, ${0.4 + Math.sin(this.time + i) * 0.2})`);
-            gradient.addColorStop(1, `rgba(33, 150, 243, ${0.2 + Math.sin(this.time + i) * 0.1})`);
+            gradient.addColorStop(0, `rgba(33, 150, 243, 0.3)`);
+            gradient.addColorStop(1, `rgba(33, 150, 243, 0.1)`);
             
             this.ctx.strokeStyle = gradient;
-            this.ctx.lineWidth = 2.5;
+            this.ctx.lineWidth = 2;
             this.ctx.beginPath();
             this.ctx.moveTo(x1, 0);
             this.ctx.lineTo(x2, this.canvas.height);
             this.ctx.stroke();
         }
         
-        // الحلقة الخارجية مع توهج
+        // الحلقة الخارجية
         this.ctx.strokeStyle = GameConfig.COLORS.HELIX;
         this.ctx.lineWidth = 3;
         this.ctx.beginPath();
         this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
         this.ctx.stroke();
-        
-        // حلقة داخلية
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-        this.ctx.lineWidth = 1;
-        this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, radius - 5, 0, Math.PI * 2);
-        this.ctx.stroke();
-    }
-    
-    drawTrail() {
-        // رسم أثر الطابة
-        for (let i = 0; i < this.ball.trail.length; i++) {
-            const point = this.ball.trail[i];
-            
-            this.ctx.save();
-            this.ctx.globalAlpha = point.alpha;
-            this.ctx.fillStyle = point.color;
-            this.ctx.beginPath();
-            this.ctx.arc(point.x, point.y, point.size, 0, Math.PI * 2);
-            this.ctx.fill();
-            this.ctx.restore();
-        }
     }
     
     drawPlatforms() {
@@ -872,13 +655,13 @@ class BallHelixGame {
             
             const angle = platform.angle + this.helixRotation;
             const x = centerX + Math.cos(angle) * GameConfig.HELIX.RADIUS;
-            const y = platform.y + (platform.bounce * 3); // تأثير الارتداد
+            const y = platform.y;
             
             this.ctx.save();
             this.ctx.translate(x, y);
             
             // لون المنصة
-            const platformColor = platform.hasGap ? '#666' : platform.color;
+            const platformColor = platform.hasGap ? '#888' : platform.color;
             
             if (platform.hasGap) {
                 // الجزء الأيسر من المنصة
@@ -898,16 +681,25 @@ class BallHelixGame {
                     platform.height
                 );
                 
-                // الفجوة مع تدرج
+                // الفجوة
+                this.ctx.fillStyle = GameConfig.COLORS.PLATFORM_GAP;
+                this.ctx.fillRect(
+                    -platform.width / 2 + platform.gapPos,
+                    -platform.height / 2,
+                    platform.gapWidth,
+                    platform.height
+                );
+                
+                // تأثير الفجوة
                 const gapGradient = this.ctx.createLinearGradient(
                     -platform.width / 2 + platform.gapPos,
                     0,
                     -platform.width / 2 + platform.gapPos + platform.gapWidth,
                     0
                 );
-                gapGradient.addColorStop(0, 'rgba(255, 82, 82, 0.6)');
-                gapGradient.addColorStop(0.5, 'rgba(255, 82, 82, 0.9)');
-                gapGradient.addColorStop(1, 'rgba(255, 82, 82, 0.6)');
+                gapGradient.addColorStop(0, 'rgba(255, 82, 82, 0.7)');
+                gapGradient.addColorStop(0.5, 'rgba(255, 82, 82, 1)');
+                gapGradient.addColorStop(1, 'rgba(255, 82, 82, 0.7)');
                 
                 this.ctx.fillStyle = gapGradient;
                 this.ctx.fillRect(
@@ -916,17 +708,6 @@ class BallHelixGame {
                     platform.gapWidth,
                     platform.height
                 );
-                
-                // تأثير الخطورة في الفجوة
-                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-                for (let i = 0; i < 3; i++) {
-                    const spikeY = -platform.height / 2 + (i * platform.height / 3);
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(-platform.width / 2 + platform.gapPos, spikeY);
-                    this.ctx.lineTo(-platform.width / 2 + platform.gapPos + platform.gapWidth / 2, spikeY + 5);
-                    this.ctx.lineTo(-platform.width / 2 + platform.gapPos + platform.gapWidth, spikeY);
-                    this.ctx.fill();
-                }
             } else {
                 // منصة كاملة
                 this.ctx.fillStyle = platformColor;
@@ -938,9 +719,9 @@ class BallHelixGame {
                 );
                 
                 // توهج للمنصة الحالية
-                if (platform === this.ball.currentPlatform) {
+                if (platform === this.character.currentPlatform) {
                     this.ctx.shadowColor = platform.color;
-                    this.ctx.shadowBlur = 25;
+                    this.ctx.shadowBlur = 20;
                     this.ctx.fillRect(
                         -platform.width / 2,
                         -platform.height / 2,
@@ -949,15 +730,6 @@ class BallHelixGame {
                     );
                     this.ctx.shadowBlur = 0;
                 }
-                
-                // خط علوي لامع
-                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-                this.ctx.fillRect(
-                    -platform.width / 2,
-                    -platform.height / 2,
-                    platform.width,
-                    2
-                );
             }
             
             // حواف المنصة
@@ -970,7 +742,26 @@ class BallHelixGame {
                 platform.height
             );
             
+            // توهج للأطراف
+            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            this.ctx.fillRect(
+                -platform.width / 2,
+                -platform.height / 2,
+                platform.width,
+                3
+            );
+            
             this.ctx.restore();
+            
+            // خط من المركز للمنصة (للتشخيص)
+            if (window.showDebug && platform === this.character.currentPlatform) {
+                this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                this.ctx.lineWidth = 1;
+                this.ctx.beginPath();
+                this.ctx.moveTo(centerX, y);
+                this.ctx.lineTo(x, y);
+                this.ctx.stroke();
+            }
         });
     }
     
@@ -978,20 +769,14 @@ class BallHelixGame {
         const centerX = this.canvas.width / 2;
         
         this.coins.forEach(coin => {
-            if (coin.collected) continue;
+            if (coin.collected) return;
             
-            const platform = this.platforms.find(p => p.id === coin.platformId);
-            if (!platform) return;
-            
-            // تأثير الطفو
-            const floatY = Math.sin(coin.floatOffset) * 5;
             const angle = coin.angle + this.helixRotation;
             const x = centerX + Math.cos(angle) * (GameConfig.HELIX.RADIUS + 25);
-            const y = platform.y - 30 + floatY;
+            const y = coin.y;
             
             this.ctx.save();
             this.ctx.translate(x, y);
-            this.ctx.rotate(coin.rotation);
             
             // رسم العملة
             this.ctx.fillStyle = GameConfig.COLORS.COIN;
@@ -1001,22 +786,20 @@ class BallHelixGame {
             
             // توهج
             this.ctx.shadowColor = GameConfig.COLORS.COIN;
-            this.ctx.shadowBlur = 20;
+            this.ctx.shadowBlur = 15;
             this.ctx.fill();
             this.ctx.shadowBlur = 0;
             
-            // تصميم العملة
-            this.ctx.fillStyle = '#FFA000';
-            this.ctx.beginPath();
-            this.ctx.arc(0, 0, 8, 0, Math.PI * 2);
-            this.ctx.fill();
-            
             // علامة الدولار
-            this.ctx.fillStyle = '#FFD700';
+            this.ctx.fillStyle = '#B8860B';
             this.ctx.font = 'bold 14px Arial';
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
             this.ctx.fillText('$', 0, 0);
+            
+            // حركة طفيفة
+            const float = Math.sin(Date.now() / 200) * 3;
+            this.ctx.translate(0, float);
             
             this.ctx.restore();
         });
@@ -1034,103 +817,84 @@ class BallHelixGame {
         });
     }
     
-    drawBall() {
+    drawCharacter() {
         this.ctx.save();
-        this.ctx.translate(this.ball.x, this.ball.y);
+        this.ctx.translate(this.character.x, this.character.y);
         
-        // تطبيق تأثير القفز (توسيع/تقليص)
-        this.ctx.scale(this.ball.scale, this.ball.scale);
+        // دوران الشخصية
+        this.ctx.rotate(this.character.rotation * 0.1);
         
-        // الظل المتحرك
-        this.ctx.fillStyle = GameConfig.COLORS.BALL_SHADOW;
+        // ظل
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
         this.ctx.beginPath();
-        this.ctx.ellipse(0, 15 + this.ball.shadowSize, 
-                        this.ball.size * 0.6, this.ball.size * 0.15, 
-                        0, 0, Math.PI * 2);
+        this.ctx.ellipse(0, 25, 20, 5, 0, 0, Math.PI * 2);
         this.ctx.fill();
         
-        // الطابة مع تدرج لوني
-        const gradient = this.ctx.createRadialGradient(
-            -10, -10, 1,
-            0, 0, this.ball.size / 2
-        );
-        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
-        gradient.addColorStop(0.5, this.ball.color);
-        gradient.addColorStop(1, this.darkenColor(this.ball.color, 30));
-        
-        this.ctx.fillStyle = gradient;
+        // الجسم
+        this.ctx.fillStyle = this.character.color;
         this.ctx.beginPath();
-        this.ctx.arc(0, 0, this.ball.size / 2, 0, Math.PI * 2);
+        this.ctx.arc(0, 0, this.character.size / 2, 0, Math.PI * 2);
         this.ctx.fill();
         
-        // تأثير ثلاثي الأبعاد
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        // عيون
+        this.ctx.fillStyle = '#FFFFFF';
+        this.ctx.beginPath();
+        this.ctx.arc(-8, -8, 6, 0, Math.PI * 2);
+        this.ctx.arc(8, -8, 6, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        // بؤبؤ
+        this.ctx.fillStyle = '#000000';
+        this.ctx.beginPath();
+        this.ctx.arc(-6, -8, 3, 0, Math.PI * 2);
+        this.ctx.arc(6, -8, 3, 0, Math.PI * 2);
+        this.ctx.fill();
+        
+        // فم
+        this.ctx.strokeStyle = '#000000';
         this.ctx.lineWidth = 2;
         this.ctx.beginPath();
-        this.ctx.arc(0, 0, this.ball.size / 2 - 2, 0, Math.PI * 2);
+        this.ctx.arc(0, 2, 8, 0.2 * Math.PI, 0.8 * Math.PI);
         this.ctx.stroke();
         
-        // خط علوي لامع
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-        this.ctx.lineWidth = 1;
+        // قبعة المهندس
+        this.ctx.fillStyle = '#3F51B5';
+        this.ctx.fillRect(-15, -25, 30, 5);
         this.ctx.beginPath();
-        this.ctx.arc(0, 0, this.ball.size / 2 - 4, 0.2 * Math.PI, 0.8 * Math.PI);
-        this.ctx.stroke();
+        this.ctx.ellipse(0, -25, 15, 3, 0, 0, Math.PI * 2);
+        this.ctx.fill();
         
-        // توهج عند النط
-        if (this.ball.velocityY < 0) {
-            this.ctx.shadowColor = this.ball.color;
-            this.ctx.shadowBlur = 30;
+        // توهج إذا كان على منصة
+        if (this.character.isOnPlatform) {
+            this.ctx.shadowColor = this.character.color;
+            this.ctx.shadowBlur = 20;
             this.ctx.beginPath();
-            this.ctx.arc(0, 0, this.ball.size / 2 + 5, 0, Math.PI * 2);
+            this.ctx.arc(0, 0, this.character.size / 2 + 5, 0, Math.PI * 2);
             this.ctx.stroke();
             this.ctx.shadowBlur = 0;
         }
         
-        // علامة المهندس (اختيارية)
-        this.ctx.fillStyle = '#FFFFFF';
-        this.ctx.font = 'bold 14px Arial';
-        this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'middle';
-        this.ctx.fillText('👨‍💻', 0, 0);
-        
         this.ctx.restore();
-    }
-    
-    darkenColor(color, percent) {
-        const num = parseInt(color.slice(1), 16);
-        const amt = Math.round(2.55 * percent);
-        const R = (num >> 16) - amt;
-        const G = (num >> 8 & 0x00FF) - amt;
-        const B = (num & 0x0000FF) - amt;
-        return `#${(
-            0x1000000 +
-            (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-            (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-            (B < 255 ? B < 1 ? 0 : B : 255)
-        ).toString(16).slice(1)}`;
     }
     
     drawDebugInfo() {
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        this.ctx.fillRect(10, 10, 280, 160);
+        this.ctx.fillRect(10, 10, 250, 130);
         
         this.ctx.fillStyle = '#FFFFFF';
         this.ctx.font = '12px Arial';
         this.ctx.textAlign = 'left';
         
         const lines = [
-            `🏆 النقاط: ${this.score}`,
-            `🔥 كومبو: x${this.combo}`,
-            `📊 المستوى: ${this.level}`,
-            `⚡ السرعة: ${this.gameSpeed.toFixed(1)}`,
-            `🌀 الدوران: ${(this.helixRotation * 180 / Math.PI).toFixed(1)}°`,
-            `📍 الموقع: (${Math.round(this.ball.x)}, ${Math.round(this.ball.y)})`,
-            `🎯 السرعة Y: ${this.ball.velocityY.toFixed(1)}`,
-            `🔄 على منصة: ${this.ball.isOnPlatform ? 'نعم' : 'لا'}`,
-            `📐 منصة حالية: ${this.ball.currentPlatform ? '#' + this.ball.currentPlatform.id : 'لا شيء'}`,
-            `🎨 لون الطابة: ${this.ball.color}`,
-            `🕐 الوقت: ${this.time.toFixed(1)}s`
+            `النقاط: ${this.score}`,
+            `النطات: ${this.jumps}`,
+            `المستوى: ${this.level}`,
+            `السرعة: ${this.gameSpeed.toFixed(1)}`,
+            `الدوران: ${(this.helixRotation * 180 / Math.PI).toFixed(1)}°`,
+            `الموقع: (${Math.round(this.character.x)}, ${Math.round(this.character.y)})`,
+            `السرعة Y: ${this.character.velocityY.toFixed(1)}`,
+            `على منصة: ${this.character.isOnPlatform ? 'نعم' : 'لا'}`,
+            `منصة حالية: ${this.character.currentPlatform ? '#' + this.character.currentPlatform.id : 'لا شيء'}`
         ];
         
         lines.forEach((line, i) => {
@@ -1141,13 +905,21 @@ class BallHelixGame {
     // ===== واجهة المستخدم =====
     updateUI() {
         document.getElementById('score').textContent = this.score;
+        document.getElementById('jumpsCount').textContent = this.jumps;
         document.getElementById('highScore').textContent = this.highScore;
-        
-        // إزالة عنصر النطات من الواجهة
+    }
+    
+    updateJumpsUI() {
         const jumpsElement = document.getElementById('jumpsCount');
-        if (jumpsElement) {
-            jumpsElement.parentElement.style.display = 'none';
-        }
+        jumpsElement.textContent = this.jumps;
+        
+        // تأثير عند تغيير عدد النطات
+        jumpsElement.style.transform = 'scale(1.2)';
+        jumpsElement.style.color = '#FF4081';
+        setTimeout(() => {
+            jumpsElement.style.transform = 'scale(1)';
+            jumpsElement.style.color = '';
+        }, 300);
     }
     
     addScore(points) {
@@ -1157,20 +929,9 @@ class BallHelixGame {
         if (this.score > this.highScore) {
             this.highScore = this.score;
             localStorage.setItem('helixHighScore', this.highScore);
-            document.getElementById('highScore').textContent = this.highScore;
         }
         
-        // تحديث الواجهة
-        document.getElementById('score').textContent = this.score;
-        
-        // تأثير عند إضافة النقاط
-        const scoreElement = document.getElementById('score');
-        scoreElement.style.transform = 'scale(1.2)';
-        scoreElement.style.color = '#FFD700';
-        setTimeout(() => {
-            scoreElement.style.transform = 'scale(1)';
-            scoreElement.style.color = '';
-        }, 300);
+        this.updateUI();
     }
     
     // ===== نهاية اللعبة =====
@@ -1180,40 +941,31 @@ class BallHelixGame {
         this.gameActive = false;
         console.log('🛑 انتهت اللعبة! النقاط:', this.score);
         
-        // جسيمات نهاية اللعبة
-        this.createParticles(this.ball.x, this.ball.y, 30, '#FF4081', 8);
-        
         // حساب الإنجاز
         let achievement = '🎮 لاعب مبتدئ';
-        if (this.score >= 1000) achievement = '🏆 بطل الأسطوانة!';
-        else if (this.score >= 500) achievement = '🥈 لاعب محترف';
-        else if (this.score >= 200) achievement = '🥉 لاعب جيد';
+        if (this.score >= 500) achievement = '🏆 بطل الأسطوانة!';
+        else if (this.score >= 200) achievement = '🥈 لاعب محترف';
+        else if (this.score >= 100) achievement = '🥉 لاعب جيد';
         
-        // عرض شاشة النهاية بعد تأخير قصير
-        setTimeout(() => {
-            const finalStats = document.getElementById('finalStats');
-            finalStats.innerHTML = `
-                <div style="margin: 15px 0;">
-                    <div style="color: rgba(255,255,255,0.8); font-size: 16px; margin-bottom: 5px;">النقاط النهائية</div>
-                    <div style="font-size: 48px; color: #FFD700; font-weight: bold;">${this.score}</div>
-                </div>
-                <div style="margin: 15px 0;">
-                    <div style="color: rgba(255,255,255,0.8); font-size: 16px; margin-bottom: 5px;">أعلى نتيجة</div>
-                    <div style="font-size: 32px; color: #4CAF50;">${this.highScore}</div>
-                </div>
-                <div style="margin: 15px 0;">
-                    <div style="color: rgba(255,255,255,0.8); font-size: 16px; margin-bottom: 5px;">أفضل كومبو</div>
-                    <div style="font-size: 32px; color: #FF4081;">x${this.combo}</div>
-                </div>
-            `;
-            
-            document.getElementById('achievementBadge').textContent = achievement;
-            document.getElementById('gameOverScreen').style.display = 'flex';
-            
-            // إعادة تعيين حدث إعادة التشغيل
-            const restartBtn = document.getElementById('gameOverRestartBtn');
-            restartBtn.onclick = () => this.restartGame();
-        }, 800);
+        // عرض شاشة النهاية
+        const finalStats = document.getElementById('finalStats');
+        finalStats.innerHTML = `
+            <div style="margin: 15px 0;">
+                <div style="color: rgba(255,255,255,0.8); font-size: 16px; margin-bottom: 5px;">النقاط النهائية</div>
+                <div style="font-size: 48px; color: #FFD700; font-weight: bold;">${this.score}</div>
+            </div>
+            <div style="margin: 15px 0;">
+                <div style="color: rgba(255,255,255,0.8); font-size: 16px; margin-bottom: 5px;">أعلى نتيجة</div>
+                <div style="font-size: 32px; color: #4CAF50;">${this.highScore}</div>
+            </div>
+        `;
+        
+        document.getElementById('achievementBadge').textContent = achievement;
+        document.getElementById('gameOverScreen').style.display = 'flex';
+        
+        // إعادة تعيين حدث إعادة التشغيل
+        const restartBtn = document.getElementById('gameOverRestartBtn');
+        restartBtn.onclick = () => this.restartGame();
     }
     
     // ===== التحكم في اللعبة =====
@@ -1231,8 +983,8 @@ class BallHelixGame {
         
         // إعادة تعيين حالة اللعبة
         this.score = 0;
+        this.jumps = 3;
         this.level = 1;
-        this.combo = 0;
         this.gameSpeed = GameConfig.DIFFICULTY[this.difficulty].SPEED;
         
         // تحديث الواجهة
@@ -1242,8 +994,7 @@ class BallHelixGame {
         this.lastTime = performance.now();
         this.gameLoop();
         
-        console.log('🎮 اللعبة بدأت! الطابة تنط تلقائياً');
-        console.log('🔄 تدوير الأسطوانة باللمس أو السحب فقط');
+        console.log('🎮 اللعبة بدأت! الصعوبة:', this.difficulty);
     }
     
     restartGame() {
@@ -1280,7 +1031,7 @@ class BallHelixGame {
 
 // ===== بدء اللعبة عند تحميل الصفحة =====
 window.addEventListener('load', () => {
-    console.log('🚀 جاهز لبدء لعبة الطابة الناطحة...');
+    console.log('🚀 جاهز لبدء اللعبة...');
     
     // إخفاء شاشة التحميل
     setTimeout(() => {
@@ -1292,33 +1043,27 @@ window.addEventListener('load', () => {
     document.getElementById('startButton').addEventListener('click', function() {
         try {
             // إنشاء وبدء اللعبة
-            window.game = new BallHelixGame();
+            window.game = new HelixGame();
             window.game.startGame();
             
-            // إخفاء زر النط من الواجهة
-            const jumpBtn = document.getElementById('jumpBtn');
-            if (jumpBtn) jumpBtn.style.display = 'none';
+            // إظهار لوحة التصحيح
+            document.getElementById('debugPanel').style.display = 'block';
             
-            // تحديث نص التعليمات
-            const instructions = document.querySelector('.controls-hint');
-            if (instructions) {
-                instructions.innerHTML = `
-                    <div class="control-item">
-                        <div class="control-icon">🔄</div>
-                        <div class="control-text">اسحب لتدوير الأسطوانة</div>
-                    </div>
-                    <div class="control-item">
-                        <div class="control-icon">⚡</div>
-                        <div class="control-text">الطابة تنط تلقائياً</div>
-                    </div>
-                    <div class="control-item">
-                        <div class="control-icon">🎯</div>
-                        <div class="control-text">تجنب الفجوات الحمراء</div>
-                    </div>
-                `;
-            }
-            
-            console.log('✅ اللعبة تعمل! الطابة تنط تلقائياً');
+            // تحديث معلومات التصحيح
+            setInterval(() => {
+                if (window.game && window.game.gameActive) {
+                    const state = window.game.character.isOnPlatform ? 
+                        `على منصة ${window.game.character.currentPlatform ? '#' + window.game.character.currentPlatform.id : ''}` : 
+                        'في الهواء';
+                    
+                    document.getElementById('debugState').textContent = state;
+                    document.getElementById('debugPosition').textContent = 
+                        `${Math.round(window.game.character.x)}, ${Math.round(window.game.character.y)}`;
+                    document.getElementById('debugPlatform').textContent = 
+                        window.game.character.currentPlatform ? 
+                        `منصة ${window.game.character.currentPlatform.id}` : 'لا شيء';
+                }
+            }, 100);
             
         } catch (error) {
             console.error('❌ خطأ في بدء اللعبة:', error);
@@ -1326,19 +1071,12 @@ window.addEventListener('load', () => {
         }
     });
     
-    // اختصارات لوحة المفاتيح للتصحيح
+    // اختصارات لوحة المفاتيح
     document.addEventListener('keydown', (e) => {
         // D لتفعيل/تعطيل التصحيح
         if (e.key === 'd' || e.key === 'D') {
             window.showDebug = !window.showDebug;
             console.log('🐛 وضع التصحيح:', window.showDebug ? 'مفعل' : 'معطل');
-        }
-        
-        // R لإعادة التشغيل
-        if (e.key === 'r' || e.key === 'R') {
-            if (window.game) {
-                window.game.restartGame();
-            }
         }
         
         // I لإضافة نقاط (للاختبار)
@@ -1349,59 +1087,42 @@ window.addEventListener('load', () => {
             }
         }
         
-        // S لإبطاء اللعبة
-        if (e.key === 's' || e.key === 'S') {
+        // R لإعادة التشغيل
+        if (e.key === 'r' || e.key === 'R') {
             if (window.game) {
-                window.game.gameSpeed = 1.0;
-                console.log('🐌 الحركة البطيئة مفعلة');
-            }
-        }
-        
-        // G لإزالة الفجوات
-        if (e.key === 'g' || e.key === 'G') {
-            if (window.game) {
-                window.game.gapChance = 0;
-                console.log('🛡️ تم إزالة الفجوات');
+                window.game.restartGame();
             }
         }
     });
+    
+    // زر لإخفاء لوحة التصحيح
+    window.toggleDebug = function() {
+        const panel = document.getElementById('debugPanel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    };
 });
 
 // وظائف مساعدة للاختبار
-window.gameHelp = {
-    // تغيير لون الطابة
-    changeBallColor: function() {
-        if (window.game && window.game.ball) {
-            const colors = GameConfig.BALL.COLORS;
-            const currentIndex = colors.indexOf(window.game.ball.color);
-            const nextIndex = (currentIndex + 1) % colors.length;
-            window.game.ball.color = colors[nextIndex];
-            console.log('🎨 تغيير لون الطابة إلى:', window.game.ball.color);
-        }
-    },
-    
-    // إضافة كومبو
-    addCombo: function(count = 5) {
+window.help = {
+    addJumps: function(count = 1) {
         if (window.game) {
-            window.game.combo += count;
-            console.log(`🔥 كومبو x${window.game.combo}!`);
+            window.game.jumps += count;
+            window.game.updateJumpsUI();
+            console.log(`✨ تمت إضافة ${count} نطة`);
         }
     },
     
-    // تجميد الطابة في الهواء
-    freezeBall: function() {
-        if (window.game && window.game.ball) {
-            window.game.ball.velocityY = 0;
-            window.game.autoJump = false;
-            console.log('❄️ الطابة مجمدة في الهواء');
-        }
-    },
-    
-    // إعادة تفعيل النط التلقائي
-    unfreezeBall: function() {
+    slowMotion: function() {
         if (window.game) {
-            window.game.autoJump = true;
-            console.log('🔥 النط التلقائي مفعل');
+            window.game.gameSpeed = 1.0;
+            console.log('🐌 تم تفعيل الحركة البطيئة');
+        }
+    },
+    
+    noGaps: function() {
+        if (window.game) {
+            window.game.gapChance = 0;
+            console.log('🛡️ تم إزالة الفجوات');
         }
     }
 };
